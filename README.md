@@ -81,3 +81,46 @@
 
 **总结**：
 本课程在传统“数据结构与算法”的基础上，融入了 **AI 大模型原理** 元素。希望同学们通过“预习 + 算法实战 + AI 辅助”的复合模式，在掌握经典算法的同时，理解现代智能技术的基石。
+
+------
+
+## 5 本地题目同步工具
+
+运行下面的命令，会先从课程上游仓库刷新秋季题单，然后直接在 `problems/` 中创建 C++ 解答文件：
+
+```bash
+python3 tools/sync_problems.py
+```
+
+每道题对应一个 `日期_题号.cpp` 文件，题目信息直接位于源码顶部，不需要在多层目录和文档之间跳转。再次运行只会添加新题和更新源码顶部的题目信息，不会覆盖已经写过的解答。常用选项：
+
+```bash
+# 同时创建 C++ 和 Python 模板
+python3 tools/sync_problems.py --language both
+
+# 离线运行，不刷新上游题单
+python3 tools/sync_problems.py --no-refresh
+
+# 预览同步结果，不修改文件
+python3 tools/sync_problems.py --dry-run
+```
+
+同步时会把题面、输入输出、样例和通过率写到源码顶部的可折叠注释中。OpenJudge 题使用普通 `main()` 模板，在原题网页提交；LeetCode 题使用官方函数模板，并带有 VS Code LeetCode 扩展可识别的标记。
+
+### LeetCode Hot 100
+
+仓库打开后，VS Code 会推荐安装 **LeetCode** 扩展。安装后切换到 `leetcode.cn` 并登录账号，即可在生成的源码中使用 `Description`、`Test` 和 `Submit` 检查是否 AC。
+
+首次下载 Hot 100 题面和官方 C++ 模板：
+
+```bash
+python3 tools/sync_hot100.py
+```
+
+文件会直接生成在 `leetcode-hot100/`。后续运行默认只下载新增题目；需要重新获取全部题面的最新通过率时使用：
+
+```bash
+python3 tools/sync_hot100.py --update-details
+```
+
+也可以在 VS Code 中打开命令面板，选择 **Tasks: Run Task**，再选择“题单：同步每日题目”或“题单：同步 LeetCode Hot 100”。
