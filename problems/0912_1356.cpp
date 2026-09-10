@@ -1,12 +1,13 @@
 // problem-sync:start
 // #region 题目
 // 题目：1356. 根据数字二进制下 1 的数目排序
-// 日期：0911
+// 日期：0912
 // 难度：Easy
 // 标签：bit manipulation
 // 平台：leetcode
 // 通过率：76.6%
 // 原题：https://leetcode.cn/problems/sort-integers-by-the-number-of-1-bits/
+// 模板指纹：f9d88fbc7a5a054209287fa563c1b0d22938c2f5a645dcc25fe4ddeb3a02de77
 // 【题目描述】
 // 给你一个整数数组 arr 。请你将数组中的元素按照其二进制表示中数字 1 的数目升序排序。
 // 如果存在多个数字二进制中 1 的数目相同，则必须将它们按照数值大小升序排列。
@@ -41,6 +42,8 @@
 // local-ide:start
 #include <cstddef>
 #include <vector>
+#include <set>
+#include <utility>
 using namespace std;
 // local-ide:end
 
@@ -50,7 +53,23 @@ using namespace std;
 class Solution {
 public:
     vector<int> sortByBits(vector<int>& arr) {
-
+        multiset<pair<int, int>> s;
+        for (int i = 0; i < arr.size(); ++i) {
+            int count = 0;
+            int n = arr[i];
+            while (n != 0) {
+                if (n % 2 == 1) {
+                    count++;
+                }
+                n /= 2;
+            }
+            s.insert({count, arr[i]});
+        }
+        vector<int> result;
+        for (auto i = s.begin(); i != s.end(); ++i) {
+            result.push_back(i->second);
+        }
+        return result;
     }
 };
 // @lc code=end

@@ -5,8 +5,9 @@
 // 难度：Mediium
 // 标签：sortings, AI
 // 平台：openjudge
-// 通过率：256/259 人（98.8%）
+// 通过率：282/285 人（98.9%）
 // 原题：http://cs101.openjudge.cn/pctbook/M27300
+// 模板指纹：e98b092c7a2ab4b20ef0478796958fcdb4cdf4b19ee215cc49a3046b777fc410
 // 【题目描述】
 // 总时间限制:
 // 1000ms
@@ -47,13 +48,51 @@
 // problem-sync:end
 
 #include <iostream>
+#include <set>
+#include <map>
+#include <string>
+#include <sstream>
+
 
 using namespace std;
+
 
 int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
-    // TODO: 在这里编写解答。
+    int n;
+    cin >> n;
+    map<string, set<pair<string, int>>> m;
+
+    for (int i = 0; i < n; ++i) {
+        string temp;
+        cin >> temp;
+        string model, unit;
+        int num;
+        stringstream ss(temp);
+        getline(ss, model, '-');
+        ss << num << unit;
+
+        if (m.find(model) != m.end()) {
+            m[model].insert((unit, num));
+        }
+        else {
+            m[model];
+            m[model].insert(size);
+        }
+    }
+
+    for (auto i = m.begin(); i != m.end(); ++i) {
+        cout << i->first << ": ";
+        auto j = (i->second).begin();
+        cout << (*j);
+        ++j;
+        for ( ; j != (i->second).end(); ++j) {
+            cout << ", " << (*j);
+        }
+        cout << endl;
+    }
+
     return 0;
 }

@@ -1,12 +1,13 @@
 // problem-sync:start
 // #region 题目
 // 题目：1680. 连接连续二进制数字
-// 日期：0912
+// 日期：0913
 // 难度：Medium
 // 标签：bit manipulation
 // 平台：leetcode
-// 通过率：62.9%
+// 通过率：62.8%
 // 原题：https://leetcode.cn/problems/concatenation-of-consecutive-binary-numbers/
+// 模板指纹：a31e69c50e57ff951f3a80d80cbc8104b21d9b21bc10f4a748b1bac7e9c711d8
 // 【题目描述】
 // 给你一个整数 n ，请你将 1 到 n 的二进制表示连接起来，并返回连接结果对应的 十进制 数字对
 // 10^9 + 7 取余的结果。

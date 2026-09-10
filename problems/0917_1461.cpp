@@ -1,12 +1,13 @@
 // problem-sync:start
 // #region 题目
 // 题目：1461. 检查一个字符串是否包含所有长度为 K 的二进制子串
-// 日期：0916
+// 日期：0917
 // 难度：Medium
 // 标签：bit manipulation
 // 平台：leetcode
 // 通过率：62.6%
 // 原题：https://leetcode.cn/problems/check-if-a-string-contains-all-binary-codes-of-size-k/
+// 模板指纹：98454793837a121313ded46cd3e7e877ec15c9f0a580fa76fd774774e29967a6
 // 【题目描述】
 // 给你一个二进制字符串 s 和一个整数 k 。如果所有长度为 k 的二进制字符串都是 s 的子串，请返
 // 回 true ，否则请返回 false 。

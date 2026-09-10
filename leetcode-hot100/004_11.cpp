@@ -28,9 +28,13 @@
 // #endregion
 // problem-sync:end
 
+// 确定左边界(如果发现比左边的矮就直接跳过设为0），从右往左边界开始选择右边界，如果后一次选择，发现height没有前面的高，
+// 直接pass，否则尝试计算，判断是否可以换成新的max；针对每一个左边界算出max再求max
+
 // local-ide:start
 #include <cstddef>
 #include <vector>
+#include <cmath>
 using namespace std;
 // local-ide:end
 
@@ -40,7 +44,12 @@ using namespace std;
 class Solution {
 public:
     int maxArea(vector<int>& height) {
+        int n = height.size();
+        int left = 0, right = n - 1;
+        int areas = min(height[left], height[right]) * (right - left);
+        for (int i = 0; i < n; ++i) {
 
+        }
     }
 };
 // @lc code=end

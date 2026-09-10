@@ -1,12 +1,13 @@
 // problem-sync:start
 // #region 题目
 // 题目：868. 二进制间距
-// 日期：0913
+// 日期：0914
 // 难度：Easy
 // 标签：bit manipulation
 // 平台：leetcode
 // 通过率：71.8%
 // 原题：https://leetcode.cn/problems/binary-gap/
+// 模板指纹：0b8debabe0711bf2a516e4d77b85b0c7f3bcbd46872e77f8b09265cb54ecdcbe
 // 【题目描述】
 // 给定一个正整数 n，找到并返回 n 的二进制表示中两个 相邻 1 之间的 最长距离 。如果不存在两
 // 个相邻的 1，返回 0 。

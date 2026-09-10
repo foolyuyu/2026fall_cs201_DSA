@@ -5,8 +5,9 @@
 // 难度：Easy
 // 标签：OOP
 // 平台：openjudge
-// 通过率：339/344 人（98.5%）
+// 通过率：376/381 人（98.7%）
 // 原题：http://cs101.openjudge.cn/pctbook/E27653/
+// 模板指纹：e98b092c7a2ab4b20ef0478796958fcdb4cdf4b19ee215cc49a3046b777fc410
 // 【题目描述】
 // 总时间限制:
 // 1000ms
@@ -39,13 +40,44 @@
 // problem-sync:end
 
 #include <iostream>
+#include <cmath>
 
 using namespace std;
 
-int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
+int gcd(int a, int b) {
+    if (a % b == 0) {
+        return abs(b);
+    }
+    else {
+        return abs(gcd(b, a % b));
+    }
+}
 
-    // TODO: 在这里编写解答。
+
+class Fraction {
+public:
+    int son, mum;
+
+    Fraction(int son, int mum) : son{son}, mum{mum} {}
+    Fraction operator+(Fraction& F) {
+        int mum_result = this->mum * F.mum / gcd(this->mum, F.mum);
+        int son_result = this->son * (mum_result / this->mum) + F.son * (mum_result / F.mum);
+        int a = gcd(mum_result, son_result);
+        return Fraction(son_result / a, mum_result / a);
+    }
+    friend ostream& operator<< (ostream& os, const Fraction& F) {
+        os << F.son << "/" << F.mum;
+        return os;
+    }
+};
+
+
+int main() {
+    int son_1, son_2, mum_1, mum_2;
+    cin >> son_1 >> mum_1 >> son_2 >> mum_2;
+    Fraction a(son_1, mum_1), b(son_2, mum_2);
+    cout << (a + b) << endl;
+
+
     return 0;
 }

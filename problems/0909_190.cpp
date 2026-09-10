@@ -7,6 +7,7 @@
 // 平台：leetcode
 // 通过率：75.0%
 // 原题：https://leetcode.cn/problems/reverse-bits/
+// 模板指纹：6be1f7281ace495812c5465e01fc1621bd8e77125ca9f23dbd70a2c0bf6beba9
 // 【题目描述】
 // 颠倒给定的 32 位有符号整数的二进制位。
 // 示例 1：
@@ -38,6 +39,7 @@
 
 // local-ide:start
 #include <cstddef>
+#include <queue>
 using namespace std;
 // local-ide:end
 
@@ -47,7 +49,17 @@ using namespace std;
 class Solution {
 public:
     int reverseBits(int n) {
-
+        queue<int> q;
+        for(int i = 0; i < 32; ++i) {
+            q.push(n % 2);
+            n /= 2;
+        }
+        int result = 0;
+        while(!q.empty()) {
+            result = result * 2 + q.front();
+            q.pop();
+        }
+        return result;
     }
 };
 // @lc code=end

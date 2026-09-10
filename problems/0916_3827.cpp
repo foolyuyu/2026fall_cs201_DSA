@@ -1,12 +1,13 @@
 // problem-sync:start
 // #region 题目
 // 题目：3827. 统计单比特整数
-// 日期：0915
+// 日期：0916
 // 难度：Easy
 // 标签：bit manipulation
 // 平台：leetcode
 // 通过率：75.1%
 // 原题：https://leetcode.cn/problems/count-monobit-integers/
+// 模板指纹：4ce92d12b4002de947336bbc71e121a53f00ccf0ba957fb7511ef3f4788bb096
 // 【题目描述】
 // 给你一个整数 n。
 // 如果一个整数的二进制表示中所有位都相同，则称其为 单比特数（Monobit）。

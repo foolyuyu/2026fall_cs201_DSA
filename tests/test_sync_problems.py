@@ -68,6 +68,130 @@ class SyncProblemsTest(unittest.TestCase):
             self.assertIn("cout << 42", updated)
             self.assertIn("[C++](./0910_155.cpp)", (output / "README.md").read_text())
 
+    def test_changed_date_moves_the_same_problem_and_keeps_solution(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "list.md"
+            output = root / "problems"
+            source.write_text(SAMPLE, encoding="utf-8")
+            synchronize(source, output, "cpp", False)
+            old_path = output / "0910_155.cpp"
+            old_path.write_text(
+                old_path.read_text(encoding="utf-8").replace(
+                    "// TODO: 在这里编写解答。", "cout << 42 << '\\n';"
+                ),
+                encoding="utf-8",
+            )
+
+            moved = SAMPLE.replace("| 0910 |", "| 0918 |", 1)
+            source.write_text(moved, encoding="utf-8")
+            synchronize(source, output, "cpp", False)
+
+            new_path = output / "0918_155.cpp"
+            self.assertFalse(old_path.exists())
+            self.assertTrue(new_path.exists())
+            self.assertIn("cout << 42", new_path.read_text(encoding="utf-8"))
+
+    def test_replaced_empty_problem_is_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "list.md"
+            output = root / "problems"
+            old_list = SAMPLE.splitlines()[:3]
+            source.write_text("\n".join(old_list) + "\n", encoding="utf-8")
+            synchronize(source, output, "cpp", False)
+            old_path = output / "0910_155.cpp"
+
+            source.write_text(
+                "| 日期 | 问题编号与名称 | 标签 | 难度 | 链接 |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| 0910 | 200.新题 | array | Easy | https://example.com/200 |\n",
+                encoding="utf-8",
+            )
+            synchronize(source, output, "cpp", False)
+
+            self.assertFalse(old_path.exists())
+            self.assertTrue((output / "0910_200.cpp").exists())
+
+    def test_replaced_solved_problem_is_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "list.md"
+            output = root / "problems"
+            old_list = SAMPLE.splitlines()[:3]
+            source.write_text("\n".join(old_list) + "\n", encoding="utf-8")
+            synchronize(source, output, "cpp", False)
+            old_path = output / "0910_155.cpp"
+            old_path.write_text(
+                old_path.read_text(encoding="utf-8").replace(
+                    "// TODO: 在这里编写解答。", "cout << 42 << '\\n';"
+                ),
+                encoding="utf-8",
+            )
+
+            source.write_text(
+                "| 日期 | 问题编号与名称 | 标签 | 难度 | 链接 |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| 0910 | 200.新题 | array | Easy | https://example.com/200 |\n",
+                encoding="utf-8",
+            )
+            synchronize(source, output, "cpp", False)
+
+            self.assertTrue(old_path.exists())
+            self.assertIn("cout << 42", old_path.read_text(encoding="utf-8"))
+            self.assertTrue((output / "0910_200.cpp").exists())
+
+    def test_replaced_empty_leetcode_template_is_removed_by_fingerprint(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "list.md"
+            output = root / "problems"
+            output.mkdir()
+            old_problem = parse_problem_list(SAMPLE)[0]
+            old_path = output / "0910_155.cpp"
+            update_source_file(
+                old_path,
+                old_problem,
+                "cpp",
+                False,
+                ProblemDetails(
+                    provider="leetcode",
+                    statement="题面",
+                    cpp_template="class Solution { public: void solve() {} };",
+                    leetcode_app="leetcode.cn",
+                    frontend_id="155",
+                ),
+            )
+            source.write_text(
+                "| 日期 | 问题编号与名称 | 标签 | 难度 | 链接 |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| 0910 | 200.新题 | array | Easy | https://example.com/200 |\n",
+                encoding="utf-8",
+            )
+
+            synchronize(source, output, "cpp", False)
+
+            self.assertFalse(old_path.exists())
+            self.assertTrue((output / "0910_200.cpp").exists())
+
+    def test_code_runner_temporary_source_is_never_managed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "list.md"
+            output = root / "problems"
+            source.write_text(SAMPLE, encoding="utf-8")
+            synchronize(source, output, "cpp", False)
+            temporary = output / "tempCodeRunnerFile.cpp"
+            temporary.write_text(
+                (output / "0910_155.cpp").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            source.write_text(SAMPLE.replace("| 0910 |", "| 0918 |", 1), encoding="utf-8")
+
+            synchronize(source, output, "cpp", False)
+
+            self.assertTrue(temporary.exists())
+
     def test_html_statement_conversion(self) -> None:
         text = html_to_text("<p>输入 <code>n</code></p><ul><li>1 &lt;= n</li></ul>")
         self.assertIn("输入 n", text)
@@ -155,6 +279,16 @@ public:
             "// @lc code=end", 1
         )[0]
         self.assertNotIn("#include", submitted)
+
+    def test_leetcode_multiset_gets_set_header(self) -> None:
+        source = """// @lc app=leetcode.cn id=1356 lang=cpp
+// @lc code=start
+class Solution { multiset<pair<int, int>> values; };
+// @lc code=end
+"""
+        updated = ensure_leetcode_cpp_preamble(source)
+        self.assertIn("#include <set>", updated)
+        self.assertIn("#include <utility>", updated)
 
     def test_leetcode_starter_removes_trailing_whitespace(self) -> None:
         problem = parse_problem_list(SAMPLE)[0]

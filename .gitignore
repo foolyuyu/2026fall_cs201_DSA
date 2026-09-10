@@ -1,3 +1,29 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+
+# C/C++ build products
+*.o
+*.obj
+*.out
+*.exe
+*.bin
+*.dSYM/
+.build/
+build/
+a.out
+
+# Competitive Programming Helper test metadata
+.cph/
+
+# Extensionless executables emitted beside problem source files
+/problems/[0-9][0-9][0-9][0-9]_[0-9]*
+!/problems/*.cpp
+!/problems/*.py
+/leetcode-hot100/[0-9][0-9][0-9]_[0-9]*
+!/leetcode-hot100/*.cpp
+!/leetcode-hot100/*.py
+
+# VS Code Code Runner temporary files (keep after source-file exceptions)
+tempCodeRunnerFile
+tempCodeRunnerFile.*

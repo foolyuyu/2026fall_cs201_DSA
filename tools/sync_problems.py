@@ -8,6 +8,7 @@ block at the top of an existing file may be updated; solution code is preserved.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import re
 import subprocess
@@ -30,6 +31,7 @@ DEFAULT_SOURCE = PROJECT_ROOT / "DSA_problem_list_at_2026fall.md"
 DEFAULT_OUTPUT = PROJECT_ROOT / "problems"
 AUTO_START = "problem-sync:start"
 AUTO_END = "problem-sync:end"
+FINGERPRINT_LABEL = "模板指纹"
 
 
 @dataclass(frozen=True)
@@ -116,9 +118,13 @@ def comment_prefix(language: str) -> str:
 
 
 def metadata_block(
-    problem: Problem, language: str, details: ProblemDetails | None = None
+    problem: Problem,
+    language: str,
+    details: ProblemDetails | None = None,
+    fingerprint: str | None = None,
 ) -> str:
     prefix = comment_prefix(language)
+    fingerprint = fingerprint or starter_fingerprint(language, details)
     values = [
         AUTO_START,
         "#region 题目",
@@ -129,6 +135,7 @@ def metadata_block(
         f"平台：{details.provider if details else '未获取'}",
         f"通过率：{details.acceptance if details and details.acceptance else '未获取'}",
         f"原题：{problem.url}",
+        f"{FINGERPRINT_LABEL}：{fingerprint}",
         "【题目描述】",
         details.statement if details and details.statement else "题面暂未下载，可打开上面的原题链接。",
         "#endregion",
@@ -199,8 +206,8 @@ CPP_HEADERS_BY_SYMBOL = (
     (r"\bstring\b", "string"),
     (r"\bunordered_map\s*<", "unordered_map"),
     (r"\bunordered_set\s*<", "unordered_set"),
-    (r"(?<!unordered_)\bmap\s*<", "map"),
-    (r"(?<!unordered_)\bset\s*<", "set"),
+    (r"(?<!unordered_)\b(?:multi)?map\s*<", "map"),
+    (r"(?<!unordered_)\b(?:multi)?set\s*<", "set"),
     (r"\bstack\s*<", "stack"),
     (r"\b(?:priority_)?queue\s*<", "queue"),
     (r"\bdeque\s*<", "deque"),
@@ -302,6 +309,153 @@ def source_body(language: str) -> str:
     return CPP_BODY if language == "cpp" else PYTHON_BODY
 
 
+def normalize_source_code(source: str) -> str:
+    """Normalize insignificant whitespace before calculating a template hash."""
+    return "\n".join(line.rstrip() for line in source.splitlines()).strip()
+
+
+def starter_code(language: str, details: ProblemDetails | None) -> str:
+    if details and details.provider == "leetcode":
+        value = details.cpp_template if language == "cpp" else details.python_template
+        if value:
+            return normalize_source_code(value)
+    return normalize_source_code(source_body(language))
+
+
+def source_fingerprint(source: str) -> str:
+    return hashlib.sha256(normalize_source_code(source).encode("utf-8")).hexdigest()
+
+
+def starter_fingerprint(language: str, details: ProblemDetails | None) -> str:
+    return source_fingerprint(starter_code(language, details))
+
+
+def existing_fingerprint(source: str) -> str:
+    match = re.search(
+        rf"^(?://|#) {re.escape(FINGERPRINT_LABEL)}：([0-9a-f]{{64}})$",
+        source,
+        re.MULTILINE,
+    )
+    return match.group(1) if match else ""
+
+
+def solution_code(source: str) -> str:
+    leetcode_start = re.search(
+        r"^\s*(?://|#) @lc code=start\s*$", source, re.MULTILINE
+    )
+    leetcode_end = re.search(
+        r"^\s*(?://|#) @lc code=end\s*$", source, re.MULTILINE
+    )
+    if leetcode_start and leetcode_end and leetcode_start.end() < leetcode_end.start():
+        return source[leetcode_start.end() : leetcode_end.start()]
+    metadata = re.search(
+        rf"^(?://|#) {re.escape(AUTO_START)}$.*?"
+        rf"^(?://|#) {re.escape(AUTO_END)}$",
+        source,
+        re.MULTILINE | re.DOTALL,
+    )
+    return source[metadata.end() :] if metadata else source
+
+
+def is_untouched_generated_source(path: Path) -> bool:
+    source = path.read_text(encoding="utf-8")
+    fingerprint = existing_fingerprint(source)
+    if fingerprint:
+        return source_fingerprint(solution_code(source)) == fingerprint
+    # Old OpenJudge templates can be recognized exactly. Legacy LeetCode
+    # files are kept when there is no reliable baseline to compare against.
+    if "@lc code=start" not in source:
+        language = "cpp" if path.suffix == ".cpp" else "python"
+        return normalize_source_code(solution_code(source)) == normalize_source_code(
+            source_body(language)
+        )
+    return False
+
+
+def canonical_problem_url(url: str) -> str:
+    parsed = urlparse(url.strip())
+    return f"{parsed.netloc.lower()}{parsed.path.rstrip('/')}"
+
+
+def source_problem_url(source: str) -> str:
+    match = re.search(r"^(?://|#) 原题：(.+)$", source, re.MULTILINE)
+    return match.group(1).strip() if match else ""
+
+
+def is_managed_problem_source(path: Path) -> bool:
+    return bool(
+        path.is_file()
+        and re.fullmatch(r"\d{4}_[0-9A-Za-z-]+\.(?:cpp|py)", path.name)
+    )
+
+
+def migrate_changed_dates(
+    output: Path, problems: list[Problem], dry_run: bool
+) -> dict[Path, Path]:
+    """Move the same problem to its new date-based filename without data loss."""
+    by_url = {canonical_problem_url(problem.url): problem for problem in problems}
+    planned_sources: dict[Path, Path] = {}
+    if not output.exists():
+        return planned_sources
+    for path in sorted(output.iterdir()):
+        if not is_managed_problem_source(path):
+            continue
+        source = path.read_text(encoding="utf-8")
+        if AUTO_START not in source:
+            continue
+        url = source_problem_url(source)
+        problem = by_url.get(canonical_problem_url(url)) if url else None
+        if not problem:
+            continue
+        target = output / f"{problem.stem}{path.suffix}"
+        if target == path:
+            continue
+        if target.exists():
+            print(
+                f"提示：无法迁移 {path.name}，目标 {target.name} 已存在。",
+                file=sys.stderr,
+            )
+            continue
+        print(f"迁移：{path.name} -> {target.name}")
+        planned_sources[path] = target
+        if not dry_run:
+            path.rename(target)
+    return planned_sources
+
+
+def remove_stale_untouched_sources(
+    output: Path,
+    problems: list[Problem],
+    dry_run: bool,
+    planned_migrations: dict[Path, Path],
+) -> tuple[int, int]:
+    """Delete obsolete empty templates and retain every edited old solution."""
+    if not output.exists():
+        return 0, 0
+    current_stems = {problem.stem for problem in problems}
+    removed = 0
+    preserved = 0
+    for path in sorted(output.iterdir()):
+        if (
+            path in planned_migrations
+            or not is_managed_problem_source(path)
+            or path.stem in current_stems
+        ):
+            continue
+        source = path.read_text(encoding="utf-8")
+        if AUTO_START not in source:
+            continue
+        if is_untouched_generated_source(path):
+            print(f"删除过期空模板：{path.name}")
+            removed += 1
+            if not dry_run:
+                path.unlink()
+        else:
+            print(f"保留已作答的旧题：{path.name}")
+            preserved += 1
+    return removed, preserved
+
+
 def plugin_language(language: str) -> str:
     return "cpp" if language == "cpp" else "python3"
 
@@ -311,10 +465,7 @@ def render_source(
 ) -> str:
     block = metadata_block(problem, language, details)
     if details and details.provider == "leetcode":
-        starter = (
-            details.cpp_template if language == "cpp" else details.python_template
-        ) or source_body(language)
-        starter = "\n".join(line.rstrip() for line in starter.splitlines()).strip()
+        starter = starter_code(language, details)
         prefix = comment_prefix(language)
         leetcode_id = details.frontend_id or problem.number
         rendered = (
@@ -336,7 +487,6 @@ def update_source_file(
     dry_run: bool,
     details: ProblemDetails | None = None,
 ) -> str:
-    block = metadata_block(problem, language, details)
     if not path.exists():
         if not dry_run:
             path.write_text(render_source(problem, language, details), encoding="utf-8")
@@ -351,6 +501,8 @@ def update_source_file(
                     path.write_text(updated, encoding="utf-8")
                 return "updated"
         return "unchanged"
+    fingerprint = existing_fingerprint(original) or starter_fingerprint(language, details)
+    block = metadata_block(problem, language, details, fingerprint)
     prefix = re.escape(comment_prefix(language))
     pattern = re.compile(
         rf"{prefix}\s+{re.escape(AUTO_START)}.*?"
@@ -410,7 +562,7 @@ def render_index(
     lines = [
         "# 2026 Fall 题目工作区",
         "",
-        "源码文件与本页由 `tools/sync_problems.py` 管理；同步只更新源码顶部的题目信息，不覆盖解答。",
+        "源码文件与本页由 `tools/sync_problems.py` 管理；同题换日期会保留解答并改名，旧题被替换时只删除未作答模板。",
         "",
         "| 日期 | 题目 | 难度 | 通过率 | 标签 | 代码 |",
         "| --- | --- | --- | --- | --- | --- |",
@@ -488,6 +640,8 @@ def synchronize(
     if not dry_run:
         output.mkdir(parents=True, exist_ok=True)
 
+    planned_migrations = migrate_changed_dates(output, problems, dry_run)
+
     details_by_stem: dict[str, ProblemDetails] = {}
     if fetch_details:
         with ThreadPoolExecutor(max_workers=min(8, len(problems))) as executor:
@@ -508,12 +662,17 @@ def synchronize(
     created = 0
     updated = 0
     planned: set[str] = set()
+    migration_targets = set(planned_migrations.values())
     for problem in problems:
         for item_language in requested_languages(language):
             filename = f"{problem.stem}{source_suffix(item_language)}"
             planned.add(filename)
+            target = output / filename
+            if dry_run and target in migration_targets:
+                updated += 1
+                continue
             state = update_source_file(
-                output / filename,
+                target,
                 problem,
                 item_language,
                 dry_run,
@@ -521,6 +680,10 @@ def synchronize(
             )
             created += state == "created"
             updated += state == "updated"
+
+    remove_stale_untouched_sources(
+        output, problems, dry_run, planned_migrations
+    )
 
     index_content = render_index(problems, output, planned, details_by_stem)
     if not dry_run:

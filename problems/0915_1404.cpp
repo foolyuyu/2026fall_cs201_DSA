@@ -1,12 +1,13 @@
 // problem-sync:start
 // #region 题目
 // 题目：1404. 将二进制表示减到 1 的步骤数
-// 日期：0914
+// 日期：0915
 // 难度：Medium
 // 标签：bit manipulation
 // 平台：leetcode
 // 通过率：59.4%
 // 原题：https://leetcode.cn/problems/number-of-steps-to-reduce-a-number-in-binary-representation-to-one/
+// 模板指纹：6f5b0e1fcc1fdd44dccb5c5e0b403b42e90c436a77c279abce341067725b9a3a
 // 【题目描述】
 // 给你一个以二进制形式表示的数字 s 。请你返回按下述规则将其减少到 1 所需要的步骤数：
 // -
