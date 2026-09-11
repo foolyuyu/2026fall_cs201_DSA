@@ -17,8 +17,6 @@
 
 ### E27653: Fraction类
 
-http://cs101.openjudge.cn/pctbook/E02733/
-
 OOP, http://cs101.openjudge.cn/pctbook/E27653/
 
 > 主要是练习面向对象编程写法，这样力扣题目，笔试都没有问题了。机考时候，不是必须OOP，能AC就可以。
@@ -152,7 +150,7 @@ http://cs101.openjudge.cn/practice/05443/
 
 ## 2. 学习总结和收获
 
-<mark>如果作业题目简单，有否额外练习题目，比如：OJ“计概2025fall每日选做”、CF、LeetCode、洛谷等网站题目。</mark>
+<mark>如果作业题目简单，有否额外练习题目，比如：OJ“数算2026fall每日选做”、CF、LeetCode、洛谷等网站题目。</mark>
 
 
 
