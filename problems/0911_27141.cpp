@@ -35,6 +35,10 @@
 // problem-sync:end
 
 #include <iostream>
+#include <vector>
+#include <set>
+#include <unordered_map>
+#include <cmath>
 
 using namespace std;
 
@@ -42,6 +46,26 @@ int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
-    // TODO: 在这里编写解答。
+    int n, temp, prefix = 0;
+    cin >> n;
+    unordered_map<int, int> p; // 前缀和: 位置
+    int m = 0;
+    p.insert({0, 0});
+    for (int i = 1; i <= n; ++i) {
+        cin >> temp;
+        prefix += (temp - 520);
+        if (p.find(prefix) == p.end()) {
+            p.insert({prefix, i});
+        }
+        else {
+            m = max(m, i - p[prefix]);
+        }
+    }
+    cout << m * 520;
+    
+
+
+
+
     return 0;
 }
