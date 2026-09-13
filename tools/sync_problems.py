@@ -110,6 +110,72 @@ def parse_problem_list(text: str) -> list[Problem]:
                 url=url,
             )
         )
+    if problems:
+        return problems
+
+    return parse_heading_problem_list(text)
+
+
+HEADING_DIFFICULTY = {
+    "E": "Easy",
+    "M": "Medium",
+    "H": "Hard",
+}
+
+
+def first_url(value: str) -> str:
+    match = re.search(r"https?://[^\s)>\\\]]+", value)
+    return match.group(0).rstrip(".,;，。；") if match else ""
+
+
+def normalize_prefixed_number(number: str) -> tuple[str, str]:
+    match = re.fullmatch(r"([EMH])(\d+)", number, re.IGNORECASE)
+    if not match:
+        return number, ""
+    difficulty = HEADING_DIFFICULTY[match.group(1).upper()]
+    return match.group(2), difficulty
+
+
+def section_tags(section: str, url: str) -> str:
+    for raw_line in section.splitlines():
+        if url not in raw_line:
+            continue
+        before_url = raw_line.split(url, 1)[0].strip()
+        return strip_markup(before_url).strip(" ,，:：")
+    return ""
+
+
+def parse_heading_problem_list(text: str) -> list[Problem]:
+    """Parse homework templates where each problem is a Markdown heading."""
+    headings = list(re.finditer(r"^###\s+(.+?)\s*$", text, re.MULTILINE))
+    problems: list[Problem] = []
+    seen: set[str] = set()
+
+    for index, match in enumerate(headings, start=1):
+        section_end = headings[index].start() if index < len(headings) else len(text)
+        section = text[match.end() : section_end]
+        url = first_url(section)
+        if not url or urlparse(url).scheme not in {"http", "https"}:
+            continue
+
+        number, title = split_problem_name(match.group(1))
+        if not number:
+            continue
+        number, difficulty = normalize_prefixed_number(number)
+        key = canonical_problem_url(url)
+        if key in seen:
+            continue
+        seen.add(key)
+        problems.append(
+            Problem(
+                date=f"{len(problems) + 1:03d}",
+                number=number,
+                title=title,
+                tags=section_tags(section, url),
+                difficulty=difficulty,
+                url=url,
+            )
+        )
     return problems
 
 
@@ -314,11 +380,60 @@ def normalize_source_code(source: str) -> str:
     return "\n".join(line.rstrip() for line in source.splitlines()).strip()
 
 
+def ensure_python_starter_bodies(source: str) -> str:
+    """Keep empty LeetCode Python starter blocks syntactically valid."""
+    lines = source.splitlines()
+    result: list[str] = []
+    for index, line in enumerate(lines):
+        result.append(line)
+        if not line.rstrip().endswith(":"):
+            continue
+
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        indent = len(line) - len(line.lstrip(" "))
+        next_nonblank = next(
+            (candidate for candidate in lines[index + 1 :] if candidate.strip()), None
+        )
+        if next_nonblank is None:
+            result.append(" " * (indent + 4) + "pass  # TODO: 在这里编写解答。")
+            continue
+
+        next_indent = len(next_nonblank) - len(next_nonblank.lstrip(" "))
+        if next_indent <= indent:
+            result.append(" " * (indent + 4) + "pass  # TODO: 在这里编写解答。")
+    return "\n".join(result)
+
+
+def ensure_leetcode_python_starter_bodies(source: str) -> str:
+    pattern = re.compile(
+        r"(^# @lc code=start\s*\n)(.*?)(^# @lc code=end\s*$)",
+        re.MULTILINE | re.DOTALL,
+    )
+
+    def replace(match: re.Match[str]) -> str:
+        code = match.group(2).strip("\n")
+        return (
+            f"{match.group(1)}"
+            f"{ensure_python_starter_bodies(code)}\n"
+            f"{match.group(3)}"
+        )
+
+    return pattern.sub(replace, source, count=1)
+
+
 def starter_code(language: str, details: ProblemDetails | None) -> str:
     if details and details.provider == "leetcode":
         value = details.cpp_template if language == "cpp" else details.python_template
         if value:
-            return normalize_source_code(value)
+            normalized = normalize_source_code(value)
+            return (
+                ensure_python_starter_bodies(normalized)
+                if language == "python"
+                else normalized
+            )
     return normalize_source_code(source_body(language))
 
 
@@ -385,7 +500,7 @@ def source_problem_url(source: str) -> str:
 def is_managed_problem_source(path: Path) -> bool:
     return bool(
         path.is_file()
-        and re.fullmatch(r"\d{4}_[0-9A-Za-z-]+\.(?:cpp|py)", path.name)
+        and re.fullmatch(r"\d{3,4}_[0-9A-Za-z-]+\.(?:cpp|py)", path.name)
     )
 
 
@@ -518,6 +633,8 @@ def update_source_file(
             updated = pattern.sub(block, original, count=1)
         if language == "cpp" and details.provider == "leetcode":
             updated = ensure_leetcode_cpp_preamble(updated)
+        if language == "python" and details.provider == "leetcode":
+            updated = ensure_leetcode_python_starter_bodies(updated)
         if updated != original:
             if not dry_run:
                 path.write_text(updated, encoding="utf-8")
@@ -559,12 +676,17 @@ def render_index(
     planned: set[str],
     details_by_stem: dict[str, ProblemDetails],
 ) -> str:
+    first_column = (
+        "顺序"
+        if problems and all(len(problem.date) == 3 for problem in problems)
+        else "日期"
+    )
     lines = [
         "# 2026 Fall 题目工作区",
         "",
         "源码文件与本页由 `tools/sync_problems.py` 管理；同题换日期会保留解答并改名，旧题被替换时只删除未作答模板。",
         "",
-        "| 日期 | 题目 | 难度 | 通过率 | 标签 | 代码 |",
+        f"| {first_column} | 题目 | 难度 | 通过率 | 标签 | 代码 |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
     for problem in problems:
@@ -714,9 +836,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-refresh",
         dest="refresh",
         action="store_false",
-        help="离线运行，只读取本地题单",
+        help="只读取本地题单，不从 upstream/main 更新",
     )
-    parser.set_defaults(refresh=True)
+    details_group = parser.add_mutually_exclusive_group()
+    details_group.add_argument(
+        "--fetch-details",
+        dest="fetch_details",
+        action="store_true",
+        help="从在线题库下载题面和通过率（默认行为）",
+    )
+    details_group.add_argument(
+        "--no-fetch-details",
+        dest="fetch_details",
+        action="store_false",
+        help="不下载题面，只生成本地代码框架",
+    )
+    parser.set_defaults(refresh=True, fetch_details=True)
     parser.add_argument(
         "--dry-run", action="store_true", help="只显示将发生的变更，不写入文件"
     )
@@ -743,7 +878,7 @@ def main() -> int:
             args.language,
             args.dry_run,
             source_text,
-            fetch_details=args.refresh,
+            fetch_details=args.fetch_details,
         )
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"同步失败：{exc}", file=sys.stderr)

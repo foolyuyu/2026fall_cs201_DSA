@@ -25,11 +25,48 @@ SAMPLE = """\
 """
 
 
+HOMEWORK_SAMPLE = """\
+# DSA Assignment #1
+
+### E27653: Fraction类
+
+OOP, http://cs101.openjudge.cn/pctbook/E27653/
+
+代码
+
+```python
+
+```
+
+### E190.颠倒二进制位
+
+bit manipulation, https://leetcode.cn/problems/reverse-bits/
+
+思路：
+
+### 05443: 兔子与樱花
+
+http://cs101.openjudge.cn/practice/05443/
+
+> 可以使用 Dijkstra 算法。
+"""
+
+
 class SyncProblemsTest(unittest.TestCase):
     def test_defaults_to_cpp_and_refresh(self) -> None:
         args = build_parser().parse_args([])
         self.assertEqual(args.language, "cpp")
         self.assertTrue(args.refresh)
+        self.assertTrue(args.fetch_details)
+
+    def test_refresh_and_details_flags_are_independent(self) -> None:
+        args = build_parser().parse_args(["--no-refresh"])
+        self.assertFalse(args.refresh)
+        self.assertTrue(args.fetch_details)
+
+        args = build_parser().parse_args(["--no-fetch-details"])
+        self.assertTrue(args.refresh)
+        self.assertFalse(args.fetch_details)
 
     def test_parse_problem_list(self) -> None:
         problems = parse_problem_list(SAMPLE)
@@ -37,6 +74,79 @@ class SyncProblemsTest(unittest.TestCase):
         self.assertEqual(problems[0].number, "155")
         self.assertEqual(problems[0].title, "最小栈")
         self.assertEqual(problems[0].stem, "0910_155")
+
+    def test_parse_homework_heading_problem_list(self) -> None:
+        problems = parse_problem_list(HOMEWORK_SAMPLE)
+        self.assertEqual(len(problems), 3)
+        self.assertEqual(problems[0].stem, "001_27653")
+        self.assertEqual(problems[0].difficulty, "Easy")
+        self.assertEqual(problems[0].tags, "OOP")
+        self.assertEqual(problems[1].number, "190")
+        self.assertEqual(problems[1].tags, "bit manipulation")
+        self.assertEqual(problems[2].stem, "003_05443")
+
+    def test_homework_heading_sync_generates_source_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "assignment1.md"
+            output = root / "assignment1"
+            source.write_text(HOMEWORK_SAMPLE, encoding="utf-8")
+
+            synchronize(source, output, "python", False)
+
+            self.assertTrue((output / "001_27653.py").exists())
+            self.assertTrue((output / "002_190.py").exists())
+            self.assertTrue((output / "003_05443.py").exists())
+            self.assertIn("[Python](./001_27653.py)", (output / "README.md").read_text())
+
+    def test_empty_leetcode_python_starter_is_compilable(self) -> None:
+        problem = parse_problem_list(HOMEWORK_SAMPLE)[1]
+        source = render_source(
+            problem,
+            "python",
+            ProblemDetails(
+                provider="leetcode",
+                statement="完整题面",
+                acceptance="75.0%",
+                python_template=(
+                    "class Solution:\n"
+                    "    def reverseBits(self, n: int) -> int:"
+                ),
+                leetcode_app="leetcode.cn",
+                frontend_id="190",
+            ),
+        )
+
+        self.assertIn("pass  # TODO: 在这里编写解答。", source)
+        compile(source, "<generated>", "exec")
+
+    def test_existing_empty_leetcode_python_starter_is_repaired(self) -> None:
+        problem = parse_problem_list(HOMEWORK_SAMPLE)[1]
+        details = ProblemDetails(
+            provider="leetcode",
+            statement="完整题面",
+            acceptance="75.0%",
+            python_template=(
+                "class Solution:\n"
+                "    def reverseBits(self, n: int) -> int:"
+            ),
+            leetcode_app="leetcode.cn",
+            frontend_id="190",
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "002_190.py"
+            path.write_text(
+                render_source(problem, "python", details).replace(
+                    "        pass  # TODO: 在这里编写解答。\n", ""
+                ),
+                encoding="utf-8",
+            )
+
+            update_source_file(path, problem, "python", False, details)
+
+            updated = path.read_text(encoding="utf-8")
+            self.assertIn("pass  # TODO: 在这里编写解答。", updated)
+            compile(updated, str(path), "exec")
 
     def test_flat_sync_never_overwrites_solution_code(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
