@@ -48,7 +48,15 @@ public:
         int left = 0, right = n - 1;
         int areas = min(height[left], height[right]) * (right - left);
         for (int i = 0; i < n; ++i) {
+            
+            if (height[i] <= left) {
+                continue;
+            }
+            for (int j = n - 1; j > i; --j) {
+                if (height[j] >= right) {
 
+                }
+            }
         }
     }
 };

@@ -30,6 +30,8 @@
 // local-ide:start
 #include <cstddef>
 #include <vector>
+#include <algorithm>
+#include <unordered_set>
 using namespace std;
 // local-ide:end
 
@@ -39,7 +41,26 @@ using namespace std;
 class Solution {
 public:
     int longestConsecutive(vector<int>& nums) {
-
+        if (nums.empty()) {
+            return 0;
+        }
+        unordered_set<int> n; 
+        for (int i : nums) {
+            n.emplace(i);
+        }
+        int cur_count = 1, max_count = 1;
+        for (int i : n) {
+            if (n.find(i - 1) == n.end()) {
+                while (n.find(i + 1) != n.end()) {
+                    ++cur_count;
+                    ++i;
+                }
+                max_count = max(max_count, cur_count);
+                cur_count = 1;
+            }
+        }
+        return max_count;
     }
+
 };
 // @lc code=end
