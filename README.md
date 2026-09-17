@@ -1,6 +1,6 @@
 # 2026fall-cs201: DS Algo（数据结构与算法）
 
-*Updated 2026-09-06 19:40 GMT+8*  
+*Updated 2026-09-16 10:30 GMT+8*  
  *Compiled by Hongfei Yan (2026 Fall)*  
 *项目仓库：[GMyhf/2026fall-cs201](https://github.com/GMyhf/2026fall-cs201/)*
 
@@ -44,8 +44,8 @@
   
   - 编辑器/IDE：PyCharm, VS Code
   - 环境配置指南：
-    *   [Python 开发环境搭建 (Mac & Windows)](https://github.com/GMyhf/2026spring-cs201/blob/main/Python_Development_Setup_Mac_Windows.md)
-    *   [在 VS Code 中配置 C++ 编程环境](https://github.com/GMyhf/2026spring-cs201/blob/main/Writing_First_C%2B%2B_Program_in_VS-Code.md)
+    *   [Python 开发环境搭建 (Mac & Windows)](https://github.com/GMyhf/2026fall-cs101/blob/main/Python_Development_Setup_Mac_Windows.md)
+    *   [在 VS Code 中配置 C++ 编程环境](https://github.com/GMyhf/2026fall-cs101/blob/main/Writing_First_C%2B%2B_Program_in_VS-Code.md)
 - **AI辅助自学平台**：
 
   - **小北智学平台**：登录 [zx.pku.edu.cn](https://zx.pku.edu.cn/)，加入“**数据结构与算法A/B-YHF班**”课程。可利用 **AI 助教** 进行问答式学习。如有疑问，请通过邮件联系：[yanhf@pku.edu.cn](mailto:yanhf@pku.edu.cn)
