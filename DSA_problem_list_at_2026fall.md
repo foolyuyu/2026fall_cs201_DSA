@@ -1,5 +1,5 @@
 ## 2026fall 数算（DS Algo）每日选作
-*Updated 2026-09-14 18:10 GMT+8*  *Compiled by Hongfei Yan (2026 Fall)*  
+*Updated 2026-09-29 14:11 GMT+8*  *Compiled by Hongfei Yan (2026 Fall)*  
 https://github.com/GMyhf/2026fall-cs201/blob/main/DSA_problem_list_at_2026fall.md
 
 题解，https://fuynaloft.github.io/sol101/ ✅
@@ -14,10 +14,18 @@ https://github.com/GMyhf/2026fall-cs201/blob/main/DSA_problem_list_at_2026fall.m
 
 | 日期       | 问题编号与名称                 | 标签                                 | 难度 | 链接                                             |
 | ---------- | ------------------------------ | ------------------------------------ | ---- | ------------------------------------------------ |
-| 09 | 155.最小栈 | OOP, 辅助栈 | Medium | https://leetcode.cn/problems/min-stack/ |
-| 09 | 1461.检查一个字符串是否包含所有长度为 K 的二进制子串  | bit manipulation   | Medium | https://leetcode.cn/problems/check-if-a-string-contains-all-binary-codes-of-size-k/          |
-| 09 | 3827.统计单比特整数| bit manipulation  | Easy | https://leetcode.cn/problems/count-monobit-integers/          |
-| 09 | 1404.将二进制表示减到 1 的步骤数   | bit manipulation | Medium | https://leetcode.cn/problems/number-of-steps-to-reduce-a-number-in-binary-representation-to-one/    |
+| 0930 | 239.滑动窗口最大值   | sliding window, monotonic queue   | Tough | https://leetcode.cn/problems/sliding-window-maximum/          |
+| 0929 | 2840.判断通过操作能否让字符串相等 II   | string, sorting  | Medium |  https://leetcode.cn/problems/check-if-strings-can-be-made-equal-with-operations-ii/        |
+| 0928 | 155.最小栈 | OOP, 辅助栈 | Medium | https://leetcode.cn/problems/min-stack/ |
+| 0927 | 1461.检查一个字符串是否包含所有长度为 K 的二进制子串  | bit manipulation   | Medium | https://leetcode.cn/problems/check-if-a-string-contains-all-binary-codes-of-size-k/          |
+| 0926 | 394.字符串解码     | stack  | Medium | https://leetcode.cn/problems/decode-string/          |
+| 0925 | 1096.花括号展开 II | stack  | Tough | https://leetcode.cn/problems/brace-expansion-ii/          |
+| 0924 | 1658.将 x 减到 0 的最小操作数      | sliding window       | Medium | https://leetcode.cn/problems/minimum-operations-to-reduce-x-to-zero/          |
+| 0923 | 3827.统计单比特整数| bit manipulation  | Easy | https://leetcode.cn/problems/count-monobit-integers/          |
+| 0922 | 1404.将二进制表示减到 1 的步骤数   | bit manipulation | Medium | https://leetcode.cn/problems/number-of-steps-to-reduce-a-number-in-binary-representation-to-one/    |
+| 0921 | M07207:神奇的幻方  | implementation  | Medium | http://cs101.openjudge.cn/pctbook/M07207/          |
+| 0920 | 146.LRU缓存      | hash table, doubly-linked list   | Medium | https://leetcode.cn/problems/lru-cache/          |
+| 0919 | 283.移动零        | two pointers      | Easy | https://leetcode.cn/problems/move-zeroes/          |
 | 0918 | E206.反转链表      | recursion, linked list      | Easy/Medium | https://leetcode.cn/problems/reverse-linked-list/          |
 | 0917 | E160.相交链表      | hash table, linked list, two pointers  | Easy/Medium | https://leetcode.cn/problems/intersection-of-two-linked-lists/          |
 | 0916 | 868.二进制间距  | bit manipulation | Easy | https://leetcode.cn/problems/binary-gap/          |

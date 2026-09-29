@@ -1,0 +1,29 @@
+{
+  "name": "dsa-pptx-builder",
+  "private": true,
+  "description": "把 DSA 讲义 Markdown 整理成讲课 PPTX（pptxgenjs）",
+  "scripts": {
+    "ch01": "node decks/ch01_adt_floyd_complexity.js ../202609_DSA_01_ADT_Floyd_Complexity.pptx",
+    "ch02": "node decks/ch02_linear_list.js ../202609_DSA_02_Linear_List.pptx",
+    "ch03": "node decks/ch03_stack_queue.js ../202609_DSA_03_Stack_Queue.pptx",
+    "ch04": "node decks/ch04_string.js ../202609_DSA_04_String.pptx",
+    "ch05": "node decks/ch05_binary_tree.js ../202609_DSA_05_Binary_Tree.pptx",
+    "ch06": "node decks/ch06_tree.js ../202609_DSA_06_Tree.pptx",
+    "ch07": "node decks/ch07_graph.js ../202609_DSA_07_Graph.pptx",
+    "ch08": "node decks/ch08_sorting.js ../202609_DSA_08_Sorting.pptx",
+    "ch09": "node decks/ch09_external_sort.js ../202609_DSA_09_External_Sort.pptx",
+    "ch10": "node decks/ch10_search.js ../202609_DSA_10_Search.pptx",
+    "ch11": "node decks/ch11_index.js ../202609_DSA_11_Index.pptx",
+    "ch12": "node decks/ch12_advanced.js ../202609_DSA_12_Advanced.pptx",
+    "quiz0304": "node quiz.js ../202609_DSA_MOOC_Quiz_CH03-04.pptx ch03 ch04",
+    "quiz0506": "node quiz.js ../202609_DSA_MOOC_Quiz_CH05-06.pptx ch05 ch06",
+    "quiz0708": "node quiz.js ../202609_DSA_MOOC_Quiz_CH07-08.pptx ch07 ch08",
+    "quiz0910": "node quiz.js ../202609_DSA_MOOC_Quiz_CH09-10.pptx ch09 ch10",
+    "quiz1112": "node quiz.js ../202609_DSA_MOOC_Quiz_CH11-12.pptx ch11 ch12",
+    "quiz": "npm run quiz0304 && npm run quiz0506 && npm run quiz0708 && npm run quiz0910 && npm run quiz1112"
+  },
+  "dependencies": {
+    "jszip": "3.10.2",
+    "pptxgenjs": "4.0.1"
+  }
+}
