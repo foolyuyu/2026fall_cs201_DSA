@@ -2,6 +2,11 @@ __pycache__/
 *.py[cod]
 .DS_Store
 
+# Obsidian workspace metadata and generated views
+.obsidian/
+*.base
+*.canvas
+
 # C/C++ build products
 *.o
 *.obj
