@@ -503,6 +503,13 @@ int f(char s[]) {
 
 ### **10. ** 利用给定的字母映射表进行加密。
 
+例如，假设字母映射表为：
+
+```
+a b c d e f g h i j k l m n o p q r s t u v w x y z
+n g z q t c o b m u h e l k p d a w x f y i v r s j
+```
+
 若 "encrypt" 被加密为 "tkzwsdf"，则 "algorithm" 被加密为：
 
 **答案：** `【neopwmfbl】`
@@ -2097,6 +2104,8 @@ A、1.5	B、2	C、3	D、1.99999999
 > $$ P_i = \frac{1}{2^i},\quad i = 1,2,3,\dots $$
 >
 > 此时总概率为： $$ \sum_{i=1}^\infty \frac{1}{2^i} = 1 $$ 是合法的概率分布。
+>
+> （注意：对**有限**的 $n$，题面这组概率之和是 $1-\frac{1}{2^n}\ne1$，分布本身不完整——教材第 10 章习题 1 是同一处原书题面错误，见下面第 9 题；只问 $n\to\infty$ 的极限时不影响答案。）
 >
 > **成功检索的平均检索长度（ASL）**
 >
