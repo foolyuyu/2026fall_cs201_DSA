@@ -1,0 +1,6 @@
+# Keep the normal study workspace visible.
+/*
+
+# Hide reference history and lecture-slide generator sources locally.
+!/2026spring-cs201/
+!/courseware/pptx_builder/
