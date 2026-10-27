@@ -1,5 +1,5 @@
 ## 2026fall 数算（DS Algo）每日选作
-*Updated 2026-10-05 19:47 GMT+8*  *Compiled by Hongfei Yan (2026 Fall)*  
+*Updated 2026-10-23 00:18 GMT+8*  *Compiled by Hongfei Yan (2026 Fall)*  
 https://github.com/GMyhf/2026fall-cs201/blob/main/DSA_problem_list_at_2026fall.md
 
 题解，https://fuynaloft.github.io/sol101/ ✅
@@ -14,7 +14,28 @@ https://github.com/GMyhf/2026fall-cs201/blob/main/DSA_problem_list_at_2026fall.m
 
 | 日期       | 问题编号与名称                 | 标签                                 | 难度 | 链接                                             |
 | ---------- | ------------------------------ | ------------------------------------ | ---- | ------------------------------------------------ |
-| 10 |       |       | Medium |          |
+|  |       |       | Medium |          |
+| 1029 | 05430:表达式·表达式树·表达式求值      | tree      | Tough | http://cs101.openjudge.cn/practice/05430     |
+| 1028 | 05414:由中根序列和后根序列重建二叉树     | tree      | Easy | http://cs101.openjudge.cn/practice/05414         |
+| 1027 | 31454:第一个 AA 型子串   | brute force   | Medium | http://cs101.openjudge.cn/practice/31454/          |
+| 1026 | M437.路径总和 III  | prefix sum, backtracking  | Medium | https://leetcode.cn/problems/path-sum-iii/          |
+| 1025 | 76.最小覆盖子串    | sliding window    | Tough | https://leetcode.cn/problems/minimum-window-substring/          |
+| 1024 | 04082: 树的镜面映射      | tree     | Medium | http://cs101.openjudge.cn/practice/04082/          |
+| 1023 | 31418:筛选法建最小堆的交换次数      | heap  | Easy | http://cs101.openjudge.cn/practice/31418/  |
+| 1022 | 30894: 哈夫曼编码树      | greedy    | Tough | http://cs101.openjudge.cn/practice/30894/          |
+| 1021 | 124.二叉树中的最大路径和      | dfs, dp, binary tree      | Tough | https://leetcode.cn/problems/binary-tree-maximum-path-sum/          |
+| 1020 | 236.二叉树的最近公共祖先  | dfs, binary tree | Medium | https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/          |
+| 1019 | 03720: 文本二叉树     | tree    | Medium    | http://cs101.openjudge.cn/practice/03720/      |
+| 1018 | 580C. Kefa and Park  | dfs and similar, graphs, trees   | 1500 | https://codeforces.com/contest/580/problem/C           |
+| 1017 | 297.二叉树的序列化与反序列化      | dfs, bfs  | Medium | https://leetcode.cn/problems/serialize-and-deserialize-binary-tree/          |
+| 1016 | 1843D. Apple Tree     | Combinatorics, dfs and similar, dp, math, trees     | 1200 | https://codeforces.com/problemset/problem/1843/D          |
+| 1015 | 01577:Falling Leaves | tree    | Medium    | http://cs101.openjudge.cn/practice/01577/     |
+| 1014 | 27637:括号嵌套二叉树  | dfs, stack       | Medium | http://cs101.openjudge.cn/practice/27637          |
+| 1013 | 104.二叉树的最大深度   | dfs   | Easy | https://leetcode.cn/problems/maximum-depth-of-binary-tree/          |
+| 1012 | 24591:中序表达式转后序表达式   | stack      | Medium | http://cs101.openjudge.cn/practice/24591/         |
+| 1011 | 31378:KMP 字符比较次数（nextval）| KMP   | Tough | http://cs101.openjudge.cn/practice/31378/          |
+| 1010 | 131.分割回文串       | dp, backtracking  | Medium | https://leetcode.cn/problems/palindrome-partitioning/  |
+| 1009 | 647.回文子串 | <mark>two pointers</mark>/中心扩散, dp/马拉车 | Medium | https://leetcode.cn/problems/palindromic-substrings/          |
 | 1008 | 78.子集      | backtracking      | Medium | https://leetcode.cn/problems/subsets/         |
 | 1007 | 46.全排列    | backtracking      | Medium | https://leetcode.cn/problems/permutations/          |
 | 1006 | 20018:蚂蚁王国的越野跑  | <mark>merge sort</mark>, <mark>binary indexed tree</mark> | Medium2  | http://cs101.openjudge.cn/practice/20018/          |

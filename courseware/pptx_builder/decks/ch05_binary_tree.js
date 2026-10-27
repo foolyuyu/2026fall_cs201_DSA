@@ -325,6 +325,161 @@ sectionSlide("Part 1 · 5.1", "二叉树的概念", "递归定义 · 左右有�
   card(s, 6.05, 1.05, 3.45, 4.05, C.code);
   image(s, "fig-5-23", 6.2, 1.15, 3.15, 3.35);
   text(s, "图 5.23　中序穿线二叉树：虚线是借空指针存下的中序前驱 / 后继", 6.15, 4.5, 3.25, 0.55, { fontSize: 9, color: C.muted, align: "center" });
+  s.addNotes(`讲法（5–8 分钟，性质 5 与 5.2 周游之间的过渡）：
+1. 换个角度再数一遍：n 个结点共 2n 个指针域；除根外每个结点被一根指针指着，用掉 n − 1 个；空着 2n − (n − 1) = n + 1 个。不用性质 5 也得到同一个数，一半以上的指针域是空的。
+2. 能不能利用？左指针空就存中序前驱，右指针空就存中序后继——这就是线索（thread）。
+3. 看图 5.23：挑一片叶子顺两条虚线找前驱、后继；再挑只有一个孩子的结点，只有空的那一侧变成线索。
+4. 追问：拿到一根指针，怎么知道它是孩子还是线索？→ 每根指针一位标志（ltag / rtag），不是每个结点一位。
+5. 中序还没正式讲：先一句「中序 = 左 → 根 → 右，5.2 细讲」。后面三页的代码可以讲完 5.2 中序后再回来看。
+6. 现代的看法：插入删除都要维护线索，通用库不这么做；思想今天仍活在 Morris 遍历里（临时线索，用完拆掉）。Trie 压缩、PATRICIA 到第 12 章再见。
+易错：线索与周游次序绑定。中序线索最好用；后序线索树找后继仍常要父指针。
+
+一句话总结：2n 个指针域只用了 n − 1 个；线索树把空指针改存前驱 / 后继，加标志位区分，中序周游就不需要栈。代价是插入删除要维护线索，所以今天很少当默认表示；它的思想在 Morris 遍历里还在用。`);
+}
+
+// threaded tree: build
+{
+  const s = content("5.1", "5.1.3 线索二叉树 · 代码（上）", "中序线索化：按中序走一遍，把空指针接到前驱 / 后继");
+  codeBlock(s, `struct Node {
+    T value;
+    Node* left = nullptr;
+    Node* right = nullptr;
+    bool left_thread = false;    // true：left 存的是中序前驱
+    bool right_thread = false;   // true：right 存的是中序后继
+};
+
+// 线索化：按中序走一遍，pre 是上一个访问到的结点
+static void thread_impl(Node* node, Node*& pre) {
+    if (node == nullptr) return;
+    thread_impl(node->left, pre);
+    if (node->left == nullptr) {                   // 空左指针 → 存中序前驱
+        node->left = pre;
+        node->left_thread = true;
+    }
+    if (pre != nullptr && pre->right == nullptr) { // 上一个结点的空右指针 → 存后继
+        pre->right = node;
+        pre->right_thread = true;
+    }
+    pre = node;
+    thread_impl(node->right, pre);
+}
+
+static void make_threaded(Node* root) {
+    Node* pre = nullptr;
+    thread_impl(root, pre);
+    if (pre != nullptr) pre->right_thread = true;  // 最后一个结点：后继为空
+}`, 0.5, 1.02, 6.2, 4.08, { fontSize: 8, hl: [14, 18] });
+  callout(s, "标志位：每根指针一位", "不是每个结点一位。拿到 `left` 时，必须靠 `left_thread` 才知道它指的是**孩子**还是**前驱**。", 6.95, 1.02, 2.55, 1.35, { fontSize: 10.5 });
+  callout(s, "两端是空线索", [
+    "中序第一个结点：`left` 为空，但 `left_thread = true`。",
+    "中序最后一个结点：`right` 为空，`right_thread = true`。",
+    "这样周游时只看标志位，不用再判空。",
+  ], 6.95, 2.5, 2.55, 1.6, { fontSize: 9.5, fill: C.mint, tcolor: C.dark });
+  text(s, "中序 = 左 → 根 → 右（5.2 细讲）。线索化本身就是一次中序周游，O(n)。", 6.95, 4.2, 2.55, 0.9, { fontSize: 10, color: C.goldText, bold: true, margin: 0 });
+}
+
+// threaded tree: traverse
+{
+  const s = content("5.1", "5.1.3 线索二叉树 · 代码（下）", "沿线索找后继：中序周游不用栈，也不用递归");
+  codeBlock(s, `// 中序后继：右指针是线索就直接跳；否则是右子树里最左下的结点
+static Node* next(Node* node) {
+    if (node->right_thread) return node->right;
+    node = node->right;
+    while (!node->left_thread) node = node->left;
+    return node;
+}
+
+template <typename Visitor>
+static void inorder_threaded(Node* root, Visitor& visit) {
+    if (root == nullptr) return;
+    Node* node = root;
+    while (!node->left_thread) node = node->left;  // 中序第一个：最左下
+    for (; node != nullptr; node = next(node)) visit(node->value);
+}`, 0.5, 1.02, 6.2, 2.3, { fontSize: 8.5, hl: [3, 5] });
+  table(s, [
+    ["结点 p 的情况", "中序后继"],
+    [{ t: "right_thread = true", mono: true }, "就是 `p->right`，一步到位"],
+    [{ t: "right_thread = false", mono: true }, "右子树里一路向左走到底（左指针是线索为止）"],
+  ], 0.5, 3.5, 6.2, [2.2, 4.0], { fontSize: 10, rowH: 0.38 });
+  text(s, "每个结点只多一位标志，额外空间 O(1)；每条边最多走两次，时间 O(n)。", 0.5, 4.75, 6.2, 0.35, { fontSize: 10.5, bold: true, color: C.goldText, margin: 0 });
+  // 示意：1(2(4,5),3) 的中序线索，虚线是线索
+  card(s, 6.95, 1.02, 2.55, 2.75, C.code);
+  const nodes = { a: ["1", 8.4, 1.4], b: ["2", 7.75, 2.05], c: ["3", 9.05, 2.05], d: ["4", 7.4, 2.75], e: ["5", 8.1, 2.75] };
+  drawTree(s, nodes, [["a", "b"], ["a", "c"], ["b", "d"], ["b", "e"]]);
+  const thread = (x1, y1, x2, y2) => s.addShape(pres.shapes.LINE, { x: x1, y: y1, w: x2 - x1, h: y2 - y1, line: { color: C.bad, width: 1.25, endArrowType: "triangle", dashType: "dash" } });
+  thread(7.5, 2.6, 7.68, 2.2);    // 4 → 2（后继）
+  thread(8.02, 2.6, 7.86, 2.19);  // 5 → 2（前驱）
+  thread(8.22, 2.63, 8.36, 1.58); // 5 → 1（后继）
+  thread(8.92, 1.93, 8.56, 1.48); // 3 → 1（前驱）
+  text(s, "中序 4 2 5 1 3\n红虚线 = 线索", 7.0, 3.12, 2.45, 0.6, { fontSize: 10, color: C.muted, align: "center", margin: 0 });
+  callout(s, "代价在别处", "插入、删除都要**维护线索**；通用库宁可用父指针或迭代器。", 6.95, 3.9, 2.55, 1.2, { fontSize: 10, fill: RED, tcolor: C.bad });
+}
+
+// Morris: code
+{
+  const s = content("5.1", "5.1.3 延伸 · Morris 遍历", "临时线索：用时搭上，用完拆掉，不要标志位");
+  codeBlock(s, `// Morris 中序周游：额外空间 O(1)。中途临时改树，结束时恢复原样。
+template <typename Visitor>
+static void morris_inorder(Node* root, Visitor& visit) {
+    Node* cur = root;
+    while (cur != nullptr) {
+        if (cur->left == nullptr) {            // 没有左子树：访问，往右走
+            visit(cur->value);
+            cur = cur->right;                  // 可能是真孩子，也可能是临时线索
+            continue;
+        }
+        Node* pre = cur->left;                 // 找中序前驱：左子树最右下
+        while (pre->right != nullptr && pre->right != cur) pre = pre->right;
+        if (pre->right == nullptr) {           // 第一次到 cur：搭线索，进左子树
+            pre->right = cur;
+            cur = cur->left;
+        } else {                               // 第二次到 cur：左子树已走完
+            pre->right = nullptr;              // 拆线索，恢复原树
+            visit(cur->value);
+            cur = cur->right;
+        }
+    }
+}`, 0.5, 1.02, 6.2, 3.3, { fontSize: 8.5, hl: [14, 17] });
+  text(s, "为什么需要栈？进左子树之前必须记住「回来的路」。Morris：左子树最后访问的结点（中序前驱）的 `right` 恰好是空的——让它临时指回 `cur`，路就存在树里了。", 0.5, 4.4, 6.2, 0.7, { fontSize: 10.5, color: C.dark, margin: 0 });
+  callout(s, "怎么分辨第一次 / 第二次", "不用标志位：从 `cur->left` 一路向右，碰到的若是 `cur` 本身，说明线索是**自己上次搭的**，左子树已经走完。", 6.95, 1.02, 2.55, 1.4, { fontSize: 10 });
+  callout(s, "代价", [
+    "时间 **O(n)**：找前驱的那条右链每个结点走两遍，每条边至多走 3 次。",
+    "空间 **O(1)**：只有 `cur`、`pre`。",
+  ], 6.95, 2.55, 2.55, 1.35, { fontSize: 9.5, fill: C.mint, tcolor: C.dark });
+  callout(s, "⚠ 中途在改树", "周游中途抛异常或提前退出，线索就留在树上；别的线程也不能同时读。", 6.95, 4.03, 2.55, 1.07, { fontSize: 9.5, tsize: 10.5, fill: RED, tcolor: C.bad });
+}
+
+// Morris: trace + compare
+{
+  const s = content("5.1", "5.1.3 延伸 · Morris 遍历逐步推演", "1(2(4, 5), 3)：每个有左子树的结点被经过两次");
+  card(s, 0.5, 1.02, 2.6, 2.55, C.code);
+  const nodes = { a: ["1", 1.95, 1.4], b: ["2", 1.3, 2.05], c: ["3", 2.6, 2.05], d: ["4", 0.95, 2.75], e: ["5", 1.65, 2.75] };
+  drawTree(s, nodes, [["a", "b"], ["a", "c"], ["b", "d"], ["b", "e"]]);
+  const thread = (x1, y1, x2, y2) => s.addShape(pres.shapes.LINE, { x: x1, y: y1, w: x2 - x1, h: y2 - y1, line: { color: C.bad, width: 1.25, endArrowType: "triangle", dashType: "dash" } });
+  thread(1.05, 2.6, 1.23, 2.2);   // 4 → 2
+  thread(1.77, 2.63, 1.91, 1.58); // 5 → 1
+  text(s, "红虚线：Morris 临时搭的线索\n（只用右指针）", 0.55, 3.05, 2.5, 0.5, { fontSize: 9, color: C.muted, align: "center", margin: 0 });
+  table(s, [
+    ["cur", "左子树最右下 pre", "动作", "输出"],
+    [{ t: "1", bold: true }, "5，right 空", "搭 5→1，进左子树", ""],
+    [{ t: "2", bold: true }, "4，right 空", "搭 4→2，进左子树", ""],
+    [{ t: "4", bold: true }, "（无左子树）", "访问；顺 4→2 回到 2", { t: "4", bold: true, color: C.bad }],
+    [{ t: "2", bold: true }, "4，right = 2", "第二次：拆 4→2，访问，进右", { t: "2", bold: true, color: C.bad }],
+    [{ t: "5", bold: true }, "（无左子树）", "访问；顺 5→1 回到 1", { t: "5", bold: true, color: C.bad }],
+    [{ t: "1", bold: true }, "5，right = 1", "第二次：拆 5→1，访问，进右", { t: "1", bold: true, color: C.bad }],
+    [{ t: "3", bold: true }, "（无左子树）", "访问；right 空，结束", { t: "3", bold: true, color: C.bad }],
+  ], 3.3, 1.02, 6.2, [0.5, 1.55, 3.45, 0.7], { fontSize: 9.5, rowH: 0.315 });
+  table(s, [
+    ["", "线索二叉树", "Morris 遍历"],
+    ["线索存多久", "一直在，是存储结构的一部分", "周游时临时搭，用完拆掉"],
+    ["结点结构", "每根指针多一位标志", "不变，不要标志位"],
+    ["代价", "插入、删除要维护线索", "周游中途改树，不能并发读"],
+  ], 0.5, 3.72, 9.0, [1.5, 3.75, 3.75], { fontSize: 10, rowH: 0.34 });
+  s.addNotes(`共同点：都利用性质 5 的 n + 1 个空指针，让中序周游不用栈也不用递归。Morris 可以看成「临时线索化」。
+
+比喻：普通周游随身带地图（栈）。Morris 每到一个岔路口，先派人去左边小路的尽头，在那里刻一个指回路口的箭头，再往左走；以后顺着箭头回来时，把箭头抹掉，继续往右走。
+
+推演口诀：有左子树的结点经过两次——第一次搭线索、进左；第二次拆线索、访问、进右。没有左子树的结点：访问，往右（可能顺着线索回去）。`);
 }
 
 // ============================ PART 2 ============================
@@ -481,9 +636,206 @@ static void postorder_impl(const Node* node, Visitor& visit) {
   text(s, "再取一遍前序：A B D E G C F H I ✓", 7.0, 4.2, 2.4, 0.7, { fontSize: 10, color: C.ok, bold: true, margin: 0 });
 }
 
+// rebuild teaching version
+{
+  const s = content("5.2", "5.2.2 由周游序列重建 · 教学版 teaching.hpp", "把推演表翻译成递归：只传下标，只在本段里找根");
+  codeBlock(s, `// 把中序 inorder[in_begin, in_end) 与后序 postorder[post_begin, …) 建成一棵子树，挂到 link 上。
+// 两段一样长；只传下标，不拷贝子数组。
+//
+// 后序段的最后一个是根；在中序段里找到它（下标 k），左边 k - in_begin 个是左子树，
+// 右边是右子树。左子树的大小一旦知道，后序段也就切成了「左子树 | 右子树 | 根」。
+static void build_impl(Node*& link, const T* inorder, std::size_t in_begin, std::size_t in_end,
+                       const T* postorder, std::size_t post_begin) {
+    if (in_begin == in_end) {
+        return;                                         // 空区间：空子树，link 保持 nullptr
+    }
+    const std::size_t size = in_end - in_begin;
+    const T& key = postorder[post_begin + size - 1];    // 后序段的最后一个是根
+
+    std::size_t k = in_begin;                           // 在中序段里从左往右找根
+    while (k < in_end && inorder[k] != key) {           // 只找本段：根不在本段，说明两个序列对不上
+        ++k;
+    }
+    if (k == in_end) {
+        throw std::invalid_argument("build_from_inorder_postorder: root lies outside its inorder range");
+    }
+
+    link = new Node{key, nullptr, nullptr};             // 先挂上：子树里再抛异常，它也归临时树释放
+    const std::size_t left_size = k - in_begin;
+    build_impl(link->left, inorder, in_begin, k, postorder, post_begin);
+    build_impl(link->right, inorder, k + 1, in_end, postorder, post_begin + left_size);
+}`, 0.5, 1.02, 6.75, 3.48, { fontSize: 7, hl: [12, 15, 24, 25] });
+  callout(s, "推演表的一行 = 一次调用", [
+    "中序段 `[in_begin, in_end)`；后序段从 `post_begin` 起，一样长。",
+    "根 = `key`，取后序段**最后一个**。",
+    "左 / 右子树 = 最后两行递归；右子树的后序段从 `post_begin + left_size` 起。",
+  ], 7.4, 1.02, 2.1, 2.2, { fontSize: 8.5, tsize: 10.5 });
+  callout(s, "对不上就抛异常", "`while` 只在本段找：`1 2 3` / `3 1 2` 建左子树时找 `3`，本段只有 `1` → 抛异常。入口先建在临时树里，**原树不动**。", 7.4, 3.32, 2.1, 1.78, { fontSize: 8.5, tsize: 10.5, fill: RED, tcolor: C.bad });
+  card(s, 0.5, 4.62, 6.75, 0.48, C.mint);
+  text(s, "**代价**　每帧从左往右找根，总 **O(n·h)**，退化成链时 O(n²)；递归深度 = 树高。下面三页：查表、显式栈。", 0.65, 4.62, 6.5, 0.48, { fontSize: 10, color: C.dark, valign: "middle", margin: 0 });
+  s.addNotes(`讲法（6–8 分钟，接上一页的推演表）：
+1. 推演表每一行只做三件事：取根、在中序里找到它、按左子树大小切开。这一页就是把这三件事写成代码，一次 build_impl 调用 = 表里的一行。
+2. 先对参数（比方：中序是「座位表」，后序负责指出「谁是组长」）：中序段 [in_begin, in_end) 是座位表上的这一块；后序段从 post_begin 起、一样长；key = 后序段最后一个 = 这一组的组长。
+3. 找根：while 从左往右数座位，只在本段里数。拿表的第一行带一遍：A 在 k = 4，left_size = 4；左子树的后序段从 0 起（D G E B），右子树从 0 + 4 起（H I F C）。
+4. 最后两行递归 = 表里往下的两行；空区间直接返回 = 表里的「空」。
+5. 反例：中序 1 2 3、后序 3 1 2，让学生先自己手算（多数人会「算出」一棵树）。根 2 在 k = 1，左段只有座位 1；左子树从后序取 1 个，是 3 → while 数完本段没找到 → 抛异常。好比有人自称「左边这组的组长」，却根本不坐在这组。追问：去掉 k < in_end 会怎样？→ 一直往后读，越界。
+6. 入口函数代码没印，口头讲：先建在临时树 fresh 里，建成了再替换自己；出错时 fresh 的析构收拾半成品，原树不动。「先挂上再建子树」保证半成品始终挂在 fresh 上。
+7. 代价：每帧最多数一遍本段 → 总 O(n·h)，退化成链时 O(n²)；递归深度 = 树高。下面三页各改一处：查表（找根变 O(1)）、显式栈（不递归）。
+易错：右子树的后序起点是 post_begin + left_size，不是 k + 1（k 是中序下标；后序段里根在最后，不夹在左右中间）。后序取段末、前序取段首——前序 + 中序版留作上机题第 1 题，这里不讲。
+
+一句话总结：推演表的一行 = 一次 build_impl；只传下标不拷贝；只在本段里找根，找不到就报错。`);
+}
+
+// rebuild teaching: position table
+{
+  const s = content("5.2", "5.2.2 由周游序列重建 · 教学版 · 直接查表", "键是 char：拿键当下标，找根从「数一遍」变成「查一次」");
+  codeBlock(s, `// 「点名册」：pos[c] = 字符 c 坐在中序第几号，-1 表示中序里没有。
+// 登记时发现这一格已经有人，就是中序里有重复键。
+void fill_position_table(int pos[256], const char* inorder, int count) {
+    for (int c = 0; c < 256; ++c) {
+        pos[c] = -1;
+    }
+    for (int i = 0; i < count; ++i) {
+        const unsigned char c = static_cast<unsigned char>(inorder[i]);
+        if (pos[c] != -1) {
+            throw std::invalid_argument("duplicate key in inorder sequence");
+        }
+        pos[c] = i;
+    }
+}`, 0.5, 1.02, 5.15, 1.85, { fontSize: 6.8, hl: [10, 12] });
+  callout(s, "点名册 pos[]", [
+    "`pos[c]` = 字符 `c` 坐在中序第几号；`-1` = 没这个人。",
+    "建表 O(n)，之后每次找根 **O(1)**，总代价 **O(n)**。",
+    "登记时这一格已有人 → 中序有**重复键**。",
+  ], 5.8, 1.02, 3.7, 1.85, { fontSize: 9 });
+  codeBlock(s, `// 与 build_impl 同一个递归，只把「从左往右数」换成查一次表：找根 O(1)，总代价 O(n)。
+// 两棵子树先各自建成小树，再用 create_tree（【代码5.2】）接到根上。
+void build_by_table(BinaryTree<char>& out, const int pos[256], const char* postorder,
+                    int in_begin, int in_end, int post_begin) {
+    if (in_begin == in_end) {
+        out.clear();
+        return;
+    }
+    const char key = postorder[post_begin + (in_end - in_begin) - 1];   // 后序段的最后一个是根
+    const int k = pos[static_cast<unsigned char>(key)];                 // 查表：它坐在中序第几号
+    if (k < in_begin || k >= in_end) {                                  // 不在本段（-1 也落在这里）
+        throw std::invalid_argument("root lies outside its inorder range");
+    }
+    const int left_size = k - in_begin;
+    BinaryTree<char> left, right;
+    build_by_table(left, pos, postorder, in_begin, k, post_begin);
+    build_by_table(right, pos, postorder, k + 1, in_end, post_begin + left_size);
+    out.create_tree(key, left, right);
+}`, 0.5, 2.95, 6.7, 2.2, { fontSize: 6.5, hl: [10, 11] });
+  callout(s, "工程版为什么不用它？", "键可能是大整数、字符串，**不能当下标**；换哈希表又要求键能哈希。工程版只要求 `T` 支持 `<`，只好**排序 + 二分**，O(n log n)。", 7.35, 2.95, 2.15, 2.2, { fontSize: 8.5, tsize: 10.5, fill: RED, tcolor: C.bad });
+  s.addNotes(`讲法（4–5 分钟）：
+1. 接上一页的问题：找根要从左往右数，最坏 O(n²)。问学生：如果键是字母，有没有办法「一下子」知道 E 坐在第几号？→ 点名册。
+2. 上半页 fill_position_table：pos 开 256 格，先全填 -1（没这个人）；按中序依次登记 pos[字符] = 座位号。登记时这一格已经有人 → 重名 → 报错。板书图 5.5：pos['D']=0, pos['B']=1, pos['G']=2, pos['E']=3, pos['A']=4 ……
+3. 下半页 build_by_table：和第 26 页 build_impl 一行一行对，只有标红那两行不同——while 换成查一次表；「不在本段」的判断写成 k < in_begin || k >= in_end，查不到的 -1 自然落在 k < in_begin 里。
+4. 结构上的小差别：这里不用 Node*& link，而是先把左右子树各建成一棵小树，再用 create_tree（代码 5.2）接到根上——顺便复习所有权转移。
+5. 代价：建表 O(n)，每帧 O(1)，总 O(n)。比后面工程版的 O(n log n) 还快——引出右下角的问题：工程版为什么不用？→ 键可能是大整数、字符串，不能当下标；哈希表要求能哈希；工程版是模板，只要求 <，只好排序 + 二分。
+易错：char 可能是负数，必须先转成 unsigned char 再当下标，否则 pos[-56] 越界。
+说明：这段写在 teaching_test.cpp 里，测试拿它和类里的两版逐棵对拍；它离上机题第 1 题（前序 + 中序）只差「根在段首」这一处，作业要求自己写。
+
+一句话总结：键能当下标时，找根就是查一次点名册，整棵树 O(n)。`);
+}
+
+// rebuild teaching: explicit stack (1)
+{
+  const s = content("5.2", "5.2.2 由周游序列重建 · 教学版 · 显式栈（上）", "递归调用的参数存成一帧；栈也要有主人");
+  codeBlock(s, `void build_from_inorder_postorder_iterative(const T* inorder, const T* postorder, std::size_t count) {
+    struct Frame {
+        Node** link;                    // 建好的子树挂到哪根指针上
+        std::size_t in_begin, in_end;   // 中序段
+        std::size_t post_begin;         // 后序段起点（与中序段一样长）
+        Frame* next;                    // 链式栈：下面那一帧
+    };
+    // 栈也要有主人：它一离开作用域——正常建完、找不到根抛异常、
+    // 甚至 new 本身失败——析构都会把剩下的帧还掉。与 fresh 是同一个想法。
+    struct FrameStack {
+        Frame* top = nullptr;
+        FrameStack() = default;
+        FrameStack(const FrameStack&) = delete;             // 三法则：拷贝出两份，
+        FrameStack& operator=(const FrameStack&) = delete;  // 同一批帧就会被删两次
+        ~FrameStack() {
+            while (top != nullptr) {
+                Frame* rest = top->next;
+                delete top;
+                top = rest;
+            }
+        }
+    };
+
+    BinaryTree fresh;
+    FrameStack stack;
+    stack.top = new Frame{&fresh.root_, 0, count, 0, nullptr};   // 第一次「调用」
+        // …… 下一页：弹一帧、找根、挂接、压两帧`, 0.5, 1.02, 9.0, 3.38, { fontSize: 7, hl: [3, 10, 15, 18, 26] });
+  callout(s, "与递归版逐项对应", "参数 → 帧的字段；第一次调用 → 压第一帧；`Node*&` → `Node**`（引用存不进结构体）。", 0.5, 4.48, 5.6, 0.7, { fontSize: 8.5, tsize: 10 });
+  callout(s, "为什么要 FrameStack？", "析构负责还帧：抛异常、`new` 失败都不漏。", 6.3, 4.48, 3.2, 0.7, { fontSize: 8.5, tsize: 10, fill: C.mint, tcolor: C.dark });
+  s.addNotes(`讲法（4–5 分钟）：
+1. 先问：第 26 页的递归，深度是多少？→ 树高。树退化成一条 20 万结点的链，运行栈就压穿了。办法：把运行栈换成自己管的栈。
+2. 改写是机械的，三条规则：一次调用的参数 → 一帧（Frame 的字段）；调用 → 压一帧；返回 → 弹一帧。
+3. 对 Frame：link（建好的子树挂到哪根指针上）、中序段、后序段起点，正好是 build_impl 的参数。追问：为什么 Node*& 变成 Node**？→ 引用一旦绑定不能改指向，也不能存进结构体到处搬；指针可以。
+4. 栈本身：一条手写链表，next 指向下面那一帧——压栈就是在表头插一个，弹栈就是摘掉表头。和 level_order 里的手写队列是同一写法。
+5. FrameStack：问学生——递归版出错时，那些「帧」去哪了？→ 在运行栈上，函数一退出自动回收。自己管的栈就得有个主人：把 top 包进一个局部对象，析构负责把剩下的帧还掉。于是正常建完、找不到根抛异常、甚至某次 new 失败，都不会漏。这和入口里的临时树 fresh 是同一个想法（RAII）。拷贝构造、拷贝赋值删掉：三法则——拷贝出两份，同一批帧会被删两次。
+6. 这一版最初就漏了「new 失败」这条路：只在找不到根时手动清栈，new Frame 抛 bad_alloc 时剩下的帧没人还——是 Codex 复核抓出来的。测试把 28 次 new 逐个注入失败来守住它。
+7. 第一次「调用」= 压第一帧（挂到 fresh.root_，区间是整个序列）。
+
+一句话总结：递归的每次调用 = 栈里的一帧；栈要有主人，析构负责还帧。`);
+}
+
+// rebuild teaching: explicit stack (2)
+{
+  const s = content("5.2", "5.2.2 由周游序列重建 · 教学版 · 显式栈（下）", "弹一帧、找根（与递归版一字不差）、挂接、压两帧");
+  codeBlock(s, `    // …… 接上一页
+    while (stack.top != nullptr) {
+        const Frame f = *stack.top;     // 弹出一帧
+        Frame* popped = stack.top;
+        stack.top = stack.top->next;
+        delete popped;
+
+        if (f.in_begin == f.in_end) {
+            continue;                   // 空区间：空子树
+        }
+        const std::size_t size = f.in_end - f.in_begin;
+        const T& key = postorder[f.post_begin + size - 1];
+        std::size_t k = f.in_begin;
+        while (k < f.in_end && inorder[k] != key) {
+            ++k;
+        }
+        if (k == f.in_end) {            // 剩下的帧由 stack 的析构还掉
+            throw std::invalid_argument("build_from_inorder_postorder_iterative: root lies outside its inorder range");
+        }
+
+        Node* node = new Node{key, nullptr, nullptr};
+        *f.link = node;                 // 先挂上：之后再抛异常，它也归临时树释放
+        const std::size_t left_size = k - f.in_begin;
+        // 先压右、再压左：栈后进先出，于是左子树先建，与递归的次序一致
+        stack.top = new Frame{&node->right, k + 1, f.in_end, f.post_begin + left_size, stack.top};
+        stack.top = new Frame{&node->left, f.in_begin, k, f.post_begin, stack.top};
+    }
+    clear();
+    root_ = fresh.root_;
+    fresh.root_ = nullptr;
+}`, 0.5, 1.02, 9.0, 3.46, { fontSize: 6.5, hl: [3, 5, 17, 22, 25, 26] });
+  callout(s, "先压右、再压左", "后进先出 → 左子树先建，次序同递归。找不到根直接抛：剩下的帧由 `stack` 的析构还掉。", 0.5, 4.54, 5.6, 0.64, { fontSize: 8.5, tsize: 10 });
+  callout(s, "教学版的局限", "析构仍递归：长链建得出、拆时照样爆栈。", 6.3, 4.54, 3.2, 0.64, { fontSize: 8.5, tsize: 10, fill: RED, tcolor: C.bad });
+  s.addNotes(`讲法（3–4 分钟）：
+1. 循环：弹一帧、处理一帧，直到栈空。弹出时先把整帧拷到 f，再 delete 栈顶。空区间直接 continue，相当于递归版里的 return。
+2. 找根这几行和第 26 页一字不差（只是变量从参数变成了 f.xxx），快速带过。
+3. 找不到根就直接抛——不用手动清栈，剩下的帧由 stack 的析构还掉（上一页）。
+4. 建结点、先挂上，和递归版一样：之后再出错，它也归临时树 fresh 释放。
+5. 两次递归调用变成压两帧。先压右、再压左：栈后进先出，所以左子树先建，次序和递归一样。追问：反过来压行不行？→ 也能建对，每一帧只管自己那一段，与先后无关；只是建的次序不同。
+6. 收尾和入口函数一样：建成了，再拆旧树、接新树。
+7. 诚实交代局限（右下角）：教学版的析构 destroy 仍是递归的，所以长链就算建出来，析构时照样爆栈。这里要学的是「递归 → 显式栈」的改写手法；工程版连析构也改成了迭代（5.6a）。
+易错：先 delete 栈顶再读它的字段 → 读已释放内存（ASan 报 heap-use-after-free），所以先拷到 f。left_size 是 k - f.in_begin，不是 k；右子树的后序起点是 f.post_begin + left_size。
+
+一句话总结：两次递归调用 = 压两帧（先右后左）；出错时剩下的帧交给栈对象的析构。`);
+}
+
 // rebuild pitfalls + factories
 {
-  const s = content("5.2", "5.2.2 由周游序列重建 · 工程版 modern.hpp", "两处常见的坑；工程版做成两个静态工厂");
+  const s = content("5.2", "5.2.2 由周游序列重建 · 工程版 modern.hpp（进阶）", "教学版的两处坑，工程版怎么处理；做成两个静态工厂");
   codeBlock(s, `/// 由中序 + 后序序列重建二叉树（两个序列各 count 个元素，关键码互不相同）。
 ///
 /// 不自洽的输入一律抛 std::invalid_argument，绝不默默建出一棵错树：
@@ -500,16 +852,24 @@ static BinaryTree from_preorder_inorder(const T* preorder, const T* inorder, std
   card(s, 0.5, 3.2, 4.35, 1.9, C.code);
   numCircle(s, 1, 0.65, 3.3, 0.36, C.goldText);
   text(s, "每层拷贝子数组 → O(n²)", 1.1, 3.3, 3.6, 0.36, { fontSize: 12.5, bold: true, color: C.dark, valign: "middle", margin: 0 });
-  text(s, "只传**下标区间**、在中序里**查位置**就不必拷贝。工程版把中序下标按键排序后二分查位置，总代价 O(n log n)。", 0.7, 3.75, 4.0, 1.3, { fontSize: 10.5, lsm: 1.15 });
+  text(s, "只传**下标区间**就不必拷贝（教学版已如此）。教学版的 char 点名册是 O(n)，但任意 `T` 不能当下标；工程版把中序下标按键排序后**二分**查位置，总代价 O(n log n)。", 0.7, 3.75, 4.0, 1.3, { fontSize: 10.5, lsm: 1.15 });
   card(s, 5.15, 3.2, 4.35, 1.9, RED);
   numCircle(s, 2, 5.3, 3.3, 0.36, C.bad);
   text(s, "输入不自洽时默默建出一棵树", 5.75, 3.3, 3.7, 0.36, { fontSize: 12.5, bold: true, color: C.bad, valign: "middle", margin: 0 });
-  text(s, "中序 `1 2 3`、后序 `3 1 2`：根是 2，左子树只该有 1，后序对应的却是 3。检查只要一条——**每次取出的根必须落在当前中序区间里**。", 5.35, 3.75, 4.05, 1.3, { fontSize: 10.5, lsm: 1.15 });
+  text(s, "中序 `1 2 3`、后序 `3 1 2`：根是 2，左子树只该有 1，后序对应的却是 3。检查只要一条——**每次取出的根必须落在当前中序区间里**。工程版另把重复键、键缺失单独报出。", 5.35, 3.75, 4.05, 1.3, { fontSize: 10.5, lsm: 1.15 });
+  s.addNotes(`讲法（3–4 分钟）：
+1. 代码不逐行读，只点三处：两个静态工厂；各自一行转调同一个 rebuild；差别只在 Order——根在段末（后序）还是段首（前序）。为什么不用构造函数：名字本身说明输入是哪两种序列，传反了也看得出。
+2. 坑 1：教学版已经只传下标、不拷贝；剩下的慢在「从左往右数」。比方：翻花名册 vs 查字典。工程版先把座位号按名字排好（下一页），之后每次二分，总 O(n log n)。可能被问：为什么不用哈希表做到 O(n)？→ 只要求 T 支持 <；而且排序后相邻一比就顺便查出重复键。
+3. 坑 2：教学版的 while 已经守住了；工程版是同一条检查（根必须落在本段），另把重复键、键缺失单独报出，让报错说对原因。
+4. 「能建完就一定对」：各帧的中序区间互不重叠，每个根都落在自己的区间里 → 每个座位恰好坐一个人 → 名单和座位表完全对得上，不必再周游核对。细节在第 32 页页底。
+易错：from_preorder_inorder 的参数次序是（前序, 中序），内部转成 rebuild(中序, 前序)——调用时别传反。
+
+一句话总结：工程版保留教学版的两处做法（只传下标、根必须在本段），再升级三处：二分查位置、显式栈、分类报错。`);
 }
 
 // rebuild impl p1
 {
-  const s = content("5.2", "5.2.2 由周游序列重建 · rebuild（上）", "不递归：位置查找表 + 重复键检查");
+  const s = content("5.2", "5.2.2 由周游序列重建 · 工程版 rebuild（上）", "不递归：位置查找表 + 重复键检查");
   codeBlock(s, `/// 两种重建共用的主体。不递归：待建的子树用手写链式栈保存为「区间帧」，
 /// 退化成链的输入也不会压穿调用栈。每一帧只记下标，不复制子数组。
 static BinaryTree rebuild(const T* inorder, const T* other, std::size_t count, Order order) {
@@ -539,11 +899,20 @@ static BinaryTree rebuild(const T* inorder, const T* other, std::size_t count, O
         return *hit;
     };
     // ...`, 0.5, 1.02, 9.0, 4.08, { fontSize: 8 });
+  s.addNotes(`讲法（5–6 分钟）：这一页只做准备——做一本「按名字查座位」的小字典，顺便检查名单。真正建树在下一页。
+1. 门口检查：count == 0 交一棵空树；说有人、名单却是空指针 → 报错。
+2. by_key：排的是座位号，不是座位表本身——中序的顺序就是信息，不能打乱。板书让学生自己写：中序 D B G E A C H F I（座位 0–8），按名字排序后 by_key = 4 1 5 0 3 7 2 6 8，对应 A B C D E F G H I。像一叠按人名排好的索引卡片，每张写着座位号。
+3. 查重名：排好后同名的一定挨着，逐对要求「前 < 后」。写 !(a < b) 而不写 a == b：全程只要求 T 支持 <。
+4. position_in_inorder：lower_bound = 翻到第一张「不比 key 小」的卡片；翻到底，或翻到的名字比 key 大 → 字典里没有 → 报错。每次 O(log n)，n 次合计 O(n log n)。
+5. 一句带过即可：std::sort / lower_bound 只用在这张查找表上，树和栈仍手写（课程约定 D-001 §2）；unique_ptr 让中途报错时数组自动归还；lambda 是「当场写的小函数」。
+收尾板书三种错误各在哪抓：重复键 → 本页排序后相邻比较；键缺失 → 本页查字典；根不在本段 → 下一页。
+
+一句话总结：教学版里那个从左往右数的 while，在这里换成了「排序一次 + 每次二分」。`);
 }
 
 // rebuild impl p2
 {
-  const s = content("5.2", "5.2.2 由周游序列重建 · rebuild（下）", "区间帧压进手写链式栈，逐帧挂接");
+  const s = content("5.2", "5.2.2 由周游序列重建 · 工程版 rebuild（下）", "区间帧压进手写链式栈，逐帧挂接");
   codeBlock(s, `    // 一帧 = 「把中序 [in_begin, in_end) 与另一序列 [other_begin, …) 建成子树，挂到 *link」。
     struct Frame { Node** link; std::size_t in_begin, in_end, other_begin; };
     LinkedStack<Frame> pending;
@@ -570,7 +939,18 @@ static BinaryTree rebuild(const T* inorder, const T* other, std::size_t count, O
     return result;
 }`, 0.5, 1.02, 9.0, 3.4, { fontSize: 7.9, hl: [12, 13] });
   callout(s, "为什么「能建完就一定对」", "对区间长度归纳：根取自区间末端（后序）或首端（前序），左右两段恰好分走剩下的元素；两段各自一致，拼上根整棵树也一致。测试用 400 棵随机树往返核对。", 0.5, 4.5, 5.6, 0.65, { fontSize: 9, tsize: 10, lsm: 1.0 });
-  callout(s, "为什么不递归", "递归深度 = 树高；显式栈在堆上，20 万结点的纯左链照样重建。", 6.3, 4.5, 3.2, 0.65, { fontSize: 9, tsize: 10, fill: C.mint, tcolor: C.dark, lsm: 1.0 });
+  callout(s, "为什么不递归", "教学版递归深度 = 树高；显式栈在堆上，20 万结点的纯左链照样重建。", 6.3, 4.5, 3.2, 0.65, { fontSize: 9, tsize: 10, fill: C.mint, tcolor: C.dark, lsm: 1.0 });
+  s.addNotes(`讲法（4–5 分钟，对照第 28–29 页教学版显式栈讲）：
+1. 与教学版显式栈同一个结构：一帧 Frame = 一次调用的参数（挂到哪、中序区间、另一序列的起点）；差别只是栈换成第 3 章的 LinkedStack，并且前序 / 后序共用一份。
+2. 先 push 右、再 push 左：栈后进先出，所以左子树先建，与递归次序一致（换了顺序结果也对）。
+3. root_at：前序取段首、后序取段末，一份代码两种用。left_other：前序时左子树紧跟在根后面（+1），后序时从段头开始。
+4. 根越界检查 = 教学版里的 k == in_end，同一条检查。
+5. 先挂上 *frame->link = node，再 push 子帧：中途抛异常时，已建的结点全挂在 result 上，由 result 的析构统一释放——与教学版「先建在临时树里」是同一个想法。
+6. 为什么不递归：递归深度 = 树高，20 万结点的纯左链会压穿运行栈（5.6a 的递归 clone 同理）；显式栈在堆上。
+7. 「能建完就一定对」（页底）：对区间长度归纳；测试用 400 棵随机树往返核对。
+易错：Node** link 是「指向该挂接的那根指针」，第一次见容易把 link 和 *link 搞混；5.4 BST 插入还会用同一手法，可以提前说一句。
+
+一句话总结：把递归的调用栈换成自己的链式栈，帧里只记下标和「挂到哪」；其余逻辑与教学版逐行对应。`);
 }
 
 // 5.2.3 level order principle + trace
@@ -923,14 +1303,38 @@ sectionSlide("Part 4 · 5.4", "二叉搜索树", "左小右大 · 中序即升�
 // remove: basic vs improved
 {
   const s = content("5.4", "5.4 二叉搜索树 · 删除", "两种删除方案：基本方案（原书只有文字）与改进的【算法5.10】");
-  card(s, 0.5, 1.02, 5.3, 2.75, C.code);
-  image(s, "fig-5-12", 0.65, 1.08, 5.0, 2.35);
-  text(s, "图 5.12　(a) 删 52：无左子树，右子树顶上　(b) 删 55：基本方案", 0.5, 3.45, 5.3, 0.3, { fontSize: 9, color: C.muted, align: "center" });
-  card(s, 6.05, 1.02, 3.45, 2.75, C.code);
-  image(s, "fig-5-13", 6.2, 1.08, 3.15, 2.35);
-  text(s, "图 5.13　改进方案：53 顶替 55", 6.05, 3.45, 3.45, 0.3, { fontSize: 9, color: C.muted, align: "center" });
-  callout(s, "基本方案（本书不用）", "在左子树里找中序最后一个结点 t，把**被删结点的整棵右子树**挂成 t 的右子树，再让左子树的根顶上。对，但**树可能变高**。", 0.5, 3.9, 4.35, 1.2, { fontSize: 10, fill: RED, tcolor: C.bad });
-  callout(s, "改进方案（教学版实现）", "先把左子树最大结点 t（**无右子树**）摘下：用它的左子树代替它；再用 t 顶替被删结点。接上去的是同一层的邻居，高度不会凭空长高。", 5.15, 3.9, 4.35, 1.2, { fontSize: 10, fill: C.mint, tcolor: C.dark });
+  card(s, 0.5, 1.02, 2.3, 2.75, C.code);
+  image(s, "fig-5-11", 0.55, 1.08, 2.2, 2.25);
+  text(s, "图 5.11　原树（两种方案都从它出发）", 0.5, 3.4, 2.3, 0.35, { fontSize: 8.5, color: C.muted, align: "center" });
+  card(s, 2.95, 1.02, 3.55, 2.75, C.code);
+  image(s, "fig-5-12", 3.0, 1.08, 3.45, 2.25);
+  text(s, "图 5.12　(a) 删 52　(b) 删 55，基本方案：深度 4 → 5", 2.95, 3.4, 3.55, 0.35, { fontSize: 8.5, color: C.muted, align: "center" });
+  card(s, 6.65, 1.02, 2.85, 2.75, C.code);
+  image(s, "fig-5-13", 6.7, 1.08, 2.75, 2.25);
+  text(s, "图 5.13　改进方案删 55：53 顶替，深度仍是 4", 6.65, 3.4, 2.85, 0.35, { fontSize: 8.5, color: C.muted, align: "center" });
+  callout(s, "基本方案（本书不用）", "在左子树里找中序最后一个结点 t，把**被删结点的整棵右子树**挂成 t 的右子树，再让左子树的根顶上。对，但**树可能变高**：图 5.12(b) 深度 4 → 5。", 0.5, 3.9, 4.35, 1.2, { fontSize: 10, fill: RED, tcolor: C.bad });
+  callout(s, "改进方案（教学版实现）", "先把左子树最大结点 t（**无右子树**）摘下：用它的左子树代替它；再用 t 顶替被删结点。只搬一个结点，**高度不会凭空长高**：图 5.13 深度仍是 4。", 5.15, 3.9, 4.35, 1.2, { fontSize: 10, fill: C.mint, tcolor: C.dark });
+  s.addNotes(`讲法（5–6 分钟，三张图从左往右看）：
+1. 先看图 5.11 原树：按 50, 19, 35, 55, 20, 5, 100, 52, 88, 53, 92 插入得到；中序 5 19 20 35 50 52 53 55 88 92 100 是升序。下面两种方案都从这棵树出发。深度 4（最长路径 50→55→100→88→92）。
+2. 简单情形，两种方案一样——图 5.12(a) 删 52：它没有左子树，直接让右孩子 53 顶上它的位置。（没有右子树时对称：左孩子顶上；叶子直接删。）
+3. 难的情形：被删结点左右孩子都有，例如删 55（左 52、右 100）。谁来顶替它？要求：顶上来以后「左小右大」不能坏。
+
+基本方案（图 5.12(b)）：
+4. 在左子树里找中序最后一个结点 t——从 52 出发一路向右走到底，是 53。
+5. 把 55 的整棵右子树（以 100 为根，含 88、92）挂成 53 的右子树：右子树里的数都比 55 大，当然比 53 大，所以「左小右大」成立。
+6. 再让左子树的根 52 顶替 55。结果对，但整棵右子树下沉了两层：最长路径变成 50→52→53→100→88→92，深度 4 → 5。反复删，树会越删越高、越来越像链表，检索退化成 O(n)。
+
+改进方案（图 5.13，本书教学版 remove 用的就是它）：
+7. 同样先找 t = 53（左子树里最大的，也就是 55 的中序前驱）。t 一定没有右孩子——有的话它就不是最右的了。
+8. 把 t 从原位置摘下：用它的左子树接替它（这里 53 没有孩子，原位置直接置空）。
+9. 让 53 接过 55 的左子树（52）和右子树（100），坐到 55 的位置上。53 比左子树其余的数都大、比右子树的数都小，「左小右大」原封不动。
+10. 只搬了一个结点，没有整棵子树搬家，深度仍是 4。
+
+对比一句话：基本方案搬的是「一整棵子树」，改进方案搬的是「一个结点」。两者结果都是合法的 BST，中序都还是升序，差别在高度。
+追问：为什么用前驱（左子树最大）？用后继（右子树最小，这里是 88）行不行？→ 对称地也行，教材选了前驱。
+易错（下一页代码）：t 自己可能还有左孩子，摘下 t 时必须先把它的左孩子接到 t 原来的位置——漏了这一步会成环（第 50 页）。
+
+一句话总结：两个孩子都有时，用中序前驱顶替；只搬一个结点，树不会因为删除而变高。`);
 }
 
 // remove code p1
@@ -1173,6 +1577,22 @@ sectionSlide("Part 5 · 5.5", "堆与优先队列", "完全二叉树 + 数组 ·
   ], 6.35, 2.98, 3.15, [0.6, 0.75, 0.85, 0.95], { fontSize: 9.5, rowH: 0.27, align: "center", tight: true });
   text(s, "例：深度 h = 3、每层排满（n = 15）", 6.35, 2.7, 3.15, 0.25, { fontSize: 9, color: C.muted, margin: 0, align: "center" });
   callout(s, "实际后果", "堆排序总代价 O(n log n)，但那个 log n **全部来自后面 n 次取最小**，建堆是白送的。反过来一个个 `insert` 建堆是 O(n log n)，就把这份便宜丢掉了。", 0.5, 4.0, 5.6, 1.1, { fontSize: 10.5 });
+  s.addNotes(`解读「实际后果」（2–3 分钟）：
+1. 堆排序拆成两段：先建堆，再做 n 次 remove_min。每次 remove_min 把末尾元素换到堆顶再下沉，最多沉 log n 层，n 次合计 O(n log n)。
+2. 建堆按本页细算只要 O(n)（≤ 2n 次下沉）。O(n) + O(n log n) = O(n log n)：总代价里的 log n 全部来自第二段，建堆那部分被吸收掉了——这就是「白送」的意思。
+3. 反过来，不用筛选法，而是从空堆开始一个个 insert：每个新元素放在最底层，再向上浮，最多浮到根。
+4. 关键是方向反了：
+   - 下沉（筛选法）：代价 = 离底层的距离。结点大多在底层，离底层近，沉得短。
+   - 上浮（逐个 insert）：代价 = 离根的距离。结点大多在底层，离根远，浮得长。
+   同一个「多数结点在底层」的事实，对下沉是好消息，对上浮是坏消息。
+5. 用本页同一棵树算一下（h = 3、n = 15）：逐个 insert 最坏总上浮 Σ 2^i·i = 0 + 2 + 8 + 24 = 34，筛选法是 11。光最后一层 8 个结点就占了一半，每个都可能浮 3 层，所以是 Θ(n log n)。
+   什么时候最坏？例如往最小堆里按递减顺序插入，每个新来的都比堆里所有元素小，一路浮到根。
+6. 「丢掉便宜」不改变堆排序的总阶（都是 O(n log n)），丢掉的是建堆这一段。它真正要紧的场合是只要前 k 小（top-k）：筛选法建堆 + k 次取最小 = O(n + k log n)，k 远小于 n 时接近线性；逐个 insert 建堆就先付了 O(n log n)，比直接排序还亏。
+
+追问：随机顺序逐个 insert 平均也是 O(n log n) 吗？→ 不是，平均每次只浮常数层，平均 O(n)；O(n log n) 说的是最坏情形。筛选法则是最坏也 O(n)。
+类比工程：Python 的 heapq.heapify(list) 就是筛选法 O(n)，比循环 heappush 快。
+
+一句话总结：下沉看离底多远，上浮看离根多远；结点大多在底层，所以建堆要用「自底向上下沉」，别用「逐个插入上浮」。`);
 }
 
 // priority queue

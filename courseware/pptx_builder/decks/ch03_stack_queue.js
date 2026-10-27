@@ -1075,6 +1075,7 @@ for _ in range(n):
     "子调用先出栈执行；结束后弹出的正是断点——**LIFO 恰好还原了调用/返回的次序**。",
   ], 7.3, 1.02, 2.2, 2.75, { fontSize: 10.5, gap: 4 });
   callout(s, "C++ 版", "`enum class Stage { Enter, AfterRule1, AfterRule2 };`\n`struct Frame { int s; size_t n; Stage stage; };`", 7.3, 3.9, 2.2, 1.22, { fontSize: 9, fill: C.mint, tcolor: C.dark, lsm: 1.0 });
+  s.addNotes(`演算：承重 s=5，物品 weights=[2,3,4]；帧=(remaining,count,stage)，A1=AfterRule1，A2=AfterRule2。\n\n 1. 弹出(5,3,Enter) → 压断点+子调用（选 w=4）\n    栈(底→顶)：(5,3,A1) (1,2,Enter)\n 2. 弹出(1,2,Enter) → 压断点+子调用（选 w=3）\n    栈(底→顶)：(5,3,A1) (1,2,A1) (-2,1,Enter)\n 3. 弹出(-2,1,Enter) → 出口2，child=F\n    栈(底→顶)：(5,3,A1) (1,2,A1)\n 4. 弹出(1,2,A1) → child=F，回溯：压 A2 + 不选子调用\n    栈(底→顶)：(5,3,A1) (1,2,A2) (1,1,Enter)\n 5. 弹出(1,1,Enter) → 压断点+子调用（选 w=2）\n    栈(底→顶)：(5,3,A1) (1,2,A2) (1,1,A1) (-1,0,Enter)\n 6. 弹出(-1,0,Enter) → 出口2，child=F\n    栈(底→顶)：(5,3,A1) (1,2,A2) (1,1,A1)\n 7. 弹出(1,1,A1) → child=F，回溯：压 A2 + 不选子调用\n    栈(底→顶)：(5,3,A1) (1,2,A2) (1,1,A2) (1,0,Enter)\n 8. 弹出(1,0,Enter) → 出口2，child=F\n    栈(底→顶)：(5,3,A1) (1,2,A2) (1,1,A2)\n 9. 弹出(1,1,A2) → 原样上传 child=F\n    栈(底→顶)：(5,3,A1) (1,2,A2)\n10. 弹出(1,2,A2) → 原样上传 child=F\n    栈(底→顶)：(5,3,A1)\n11. 弹出(5,3,A1) → child=F，回溯：压 A2 + 不选子调用\n    栈(底→顶)：(5,3,A2) (5,2,Enter)\n12. 弹出(5,2,Enter) → 压断点+子调用（选 w=3）\n    栈(底→顶)：(5,3,A2) (5,2,A1) (2,1,Enter)\n13. 弹出(2,1,Enter) → 压断点+子调用（选 w=2）\n    栈(底→顶)：(5,3,A2) (5,2,A1) (2,1,A1) (0,0,Enter)\n14. 弹出(0,0,Enter) → 出口1，child=T\n    栈(底→顶)：(5,3,A2) (5,2,A1) (2,1,A1)\n15. 弹出(2,1,A1) → child=T，选中物品0（w=2）\n    栈(底→顶)：(5,3,A2) (5,2,A1)\n16. 弹出(5,2,A1) → child=T，选中物品1（w=3）\n    栈(底→顶)：(5,3,A2)\n17. 弹出(5,3,A2) → 原样上传 child=T\n    栈(底→顶)：（空）\n\n结果：chosen=[0,1]，即物品 2+3=5。\n要点：步1–10 整个「选 4」分支失败；步11 回溯到不选 4；步12–14 选 3、选 2 凑出 0；步15–17 沿栈逐层上传 True。每次调用压两帧（断点在下、子调用在上），LIFO 还原调用/返回次序。`);
 }
 
 // optimization
@@ -1178,7 +1179,7 @@ sectionSlide("Part 2", "队列 Queue", "一端进、另一端出 · 先进先出
   const s = content("2.2", "2 队列 · 顺序队列", "循环队列：下标 0 是下标 mSize−1 的直接后继");
   card(s, 0.5, 1.05, 9.0, 2.45, C.code);
   image(s, "fig-3-11", 0.7, 1.15, 8.6, 2.25);
-  text(s, "(a) 初始队列里有 12、17、8、20 四个元素；(b) 两次出队、三次入队之后。入队增加 rear，出队增加 front，两者都在环上顺时针走。", 0.5, 3.55, 9, 0.5, { fontSize: 10.5, color: C.muted });
+  text(s, "(a) 初始队列里有 12、17、8、20 四个元素；(b) 两次出队、三次入队之后。入队增加 rear，出队增加 front，两者都在环上顺时针走。**注意**：本图沿用原书约定，rear 指向最后一个元素；后面的代码（教学版）里 rear_ 指向下一个可写入的空位，二者差一格。", 0.5, 3.55, 9, 0.55, { fontSize: 10.5, color: C.muted });
   card(s, 0.5, 4.15, 4.35, 0.95, C.dark);
   text(s, "位置 x 的后继", 0.7, 4.22, 3, 0.3, { fontSize: 10.5, bold: true, color: C.gold, margin: 0 });
   text(s, "(x + 1) % mSize", 0.7, 4.5, 4, 0.5, { fontSize: 22, bold: true, fontFace: MONO, color: C.white, margin: 0 });

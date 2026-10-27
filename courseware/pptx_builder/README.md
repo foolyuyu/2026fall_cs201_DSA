@@ -8,7 +8,7 @@ pptx_builder/
 ├── decks/ch01_adt_floyd_complexity.js   # 第一章
 ├── decks/ch02_linear_list.js            # 第二章（含附录 A 六道链表题）
 ├── decks/ch03_stack_queue.js            # 第三章（做新章节照它新建一个文件）
-├── decks/ch04_string.js … ch12_advanced.js  # 第 4–12 章（取材 dsa-modernization/book）
+├── decks/ch04_string.js … ch12_advanced.js  # 第 4–12 章（取材 dsa-modernization/book）；第 4 章含附录 A 三道字符串题 + 最小循环元引理
 ├── qa.sh                      # 渲染成图片 + 2x2 网格，逐页目检
 └── package.json               # pptxgenjs 4.0.1 + jszip 3.10.2
 ```
@@ -23,7 +23,7 @@ node quiz.js ../202609_DSA_MOOC_Quiz_CH03-04.pptx ch03 ch04   # 或 npm run quiz
 ```
 
 - 题目数据在 `quiz_data/chNN.js`，每个文件导出 chapter 数组（「上 / 下」两半各算一个 chapter，题号各自从 Q1 起）。
-- 一道题：`{ kind, title, stem, code?, table?, image?: {url, h}, options?, correct?: ["A"], after?, answer, notes?: [str | {code}] }`。
+- 一道题：`{ kind, title, stem, code?, table?, image?: {url, h}, options?, correct?: ["A"], after?, answer, notes?: [str | {code}], speaker? }`；`speaker` 是讲课备注（演讲者视图可见，不上屏）。
   文本支持 `**粗体**`、`` `代码` ``、`^{上标}`、`_{下标}`、`\n`。选项都短时自动排成格子（`grid: false` 可关掉），否则一行一个。
 - 版面自动缩放：左栏整体按比例缩小直到放得下，解析按字号 17→11 逐级缩；仍放不下会打印 `! 溢出`，要删减文字。
 - 单击淡入：名字以 `ANS_` 开头的形状，保存时注入 `<p:timing>`（pptxgenjs 本身不支持动画）。
