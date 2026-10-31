@@ -33,8 +33,8 @@ titleSlide({
   kicker: "数据结构与算法 · 2026 Fall",
   title: "第一章  ADT 与复杂度",
   subtitle: "Week 1：抽象与建模 · Floyd / Dijkstra · 算法分析",
-  topics: "问题抽象与建模 · 相邻矩阵 · Floyd 最短路 · 最小化最大距离\n逻辑结构 (K, r) 与线性 / 树形 / 图三分 · 顺序 / 链接 / 索引 / 散列四种存储映射\n抽象数据类型 (D, R, P) 与信息隐蔽 · 算法的四条性质 · 六种算法设计方法\n渐进分析与大 O / Ω / Θ · 最佳、最差与平均情况 · 时空折衷",
-  footer: "Compiled by Hongfei Yan · Updated 2026-09-17 · github.com/GMyhf/2026fall-cs201",
+  topics: "问题抽象与建模 · 相邻矩阵 · Floyd 最短路 · 最小化最大距离\n逻辑结构 (K, r) 与线性 / 树形 / 图三分 · 顺序 / 链接 / 索引 / 散列四种存储映射\n抽象数据类型 (D, R, P) 与信息隐蔽 · 算法的四条性质 · 六种算法设计方法\n渐进分析与大 O / Ω / Θ · 最佳、最差与平均情况 · 时空折衷\n补充：Fraction 类（ADT 落成 Python 类） · 插入排序逐行代价 · Python 容器操作实测",
+  footer: "Compiled by Hongfei Yan · Updated 2026-10-28 · github.com/GMyhf/2026fall-cs201",
 });
 
 // 2. 本章三条主线
@@ -125,7 +125,7 @@ sectionSlide("Part 1", "数据结构与算法", "DSA = Data Structures and Algor
   const s = content("1.1", "1 数据结构与算法 · 数据结构", "数据结构：三件事要分开看");
   text(s, "数据结构描述的是：按一定逻辑关系组织起来的数据，它们在计算机里怎么存放，以及定义在其上的运算。", 0.5, 1.05, 9, 0.35, { fontSize: 12.5 });
   const three = [
-    ["逻辑结构", "有哪些结点、结点之间是什么关系", "不谈占几个字节。1.1 节经纪人之间的传播路径就是一个**有向图**。", C.dark],
+    ["逻辑结构", "有哪些结点、结点之间是什么关系", "不谈占几个字节。2.1 节经纪人之间的传播路径就是一个**有向图**。", C.dark],
     ["存储结构", "同一套逻辑关系，在存储器里怎么落下来", "顺序、链接、索引、散列四种基本映射方法。", C.green],
     ["运算", "定义在这套数据上的操作", "选存储方法时必须**同时考虑运算**：要不要随机访问？会不会频繁插入？", C.goldText],
   ];
@@ -1227,8 +1227,8 @@ sectionSlide("Part 3", "算法分析", "同一个问题有多种算法，凭什�
     ["加法", "f 是 O(h)，g 是 O(h) ⟹ **f + g 是 O(h)**"],
     ["多项式", "**a·nᵏ 是 O(nᵏ)** —— 系数不影响量级"],
     ["常数倍", "f(n) = c·g(n) ⟹ **f 是 O(g)**"],
-    ["换底无关", "对任何正数 a、b（a ≠ 1，b ≠ 1；原书漏了 a ≠ 1），**logₐ n 是 O(log_b n)**：任何对数函数无论底数为何，都具有相同的增长率"],
-    ["本书约定", "对任何正数 a ≠ 1，**logₐ n 是 O(log₂ n)**；本书把 log₂ n 简写为 **log n**"],
+    ["换底无关", "对任何常数 a > 1、b > 1，**logₐ n 是 O(log_b n)**：任何对数函数无论底数为何，都具有相同的增长率"],
+    ["本书约定", "对任何常数 a > 1，**logₐ n 是 O(log₂ n)**；本书把 log₂ n 简写为 **log n**"],
   ];
   props.forEach((p, i) => {
     const x = 0.5 + (i % 2) * 4.65, y = 1.1 + Math.floor(i / 2) * 1.06;
@@ -1462,8 +1462,8 @@ sectionSlide("Part 3", "算法分析", "同一个问题有多种算法，凭什�
   const s = content("3.2", "3 算法分析 · 最佳、最差和平均情况", "分析一种算法时，该研究哪种情况？");
   const items = [
     ["最佳情况", "**发生的概率太小**，并不能作为算法性能的代表；但它可以帮助设计者或使用者了解**某个算法在何种情况下适用**。", C.ok],
-    ["最差情况", "可以让人了解一个算法**至少能做多快**，这一点在**实时系统**中尤其重要：空运处理系统里，一个绝大部分情况下能管理 n 架飞机的算法，如果不能在规定时间内管理 n 架飞机，则该算法**不可接受**。", C.bad],
-    ["平均情况", "是算法在输入规模为 n 时的**典型表现**；但分析往往需要复杂计算，而且需要知道输入的分布。多数算法的最坏与平均情况公式只差**常数因子或常数项**。", C.goldText],
+    ["最差情况", "可以让人了解一个算法**最慢需要多久**，这一点在**实时系统**中尤其重要：空运处理系统里，一个绝大部分情况下能管理 n 架飞机的算法，如果不能在规定时间内管理 n 架飞机，则该算法**不可接受**。", C.bad],
+    ["平均情况", "是算法在输入规模为 n 时的**典型表现**；但分析往往需要复杂计算，而且需要知道输入的分布。最坏与平均情况应**分别分析**，可能相差一个量级。", C.goldText],
   ];
   items.forEach((it, i) => {
     const y = 1.05 + i * 1.18;
@@ -1549,6 +1549,83 @@ sectionSlide("Part 3", "算法分析", "同一个问题有多种算法，凭什�
   card(s, 0.5, 3.85, 9.0, 1.25, C.dark);
   text(s, "落到本章的例子上", 0.7, 3.93, 4, 0.3, { fontSize: 11, bold: true, color: C.gold, margin: 0 });
   s.addText(runs("2.1 节要的是**任意两点之间**的最短路径，并且只有**五个**经纪人，所以**相邻矩阵 + Floyd** 是合适的——实现简单，三重循环在 n = 5 时可以忽略。如果**顶点很多、边很少**，而且**只问单源**最短路，就应该换成**邻接表 + Dijkstra**。", { color: C.white, boldColor: C.gold }), { x: 0.7, y: 4.22, w: 8.6, h: 0.8, fontFace: FONT, fontSize: 12.5, margin: 0, isTextBox: true });
+}
+
+// ============================ 补充 ============================
+// 取材 2026spring-cs201 讲义 W01（OOP / Fraction）与 W04（插入排序的逐行代价、Python 操作的复杂度）。代码与实测均在本机跑过。
+sectionSlide("补充", "用 Python 落地", "ADT → 一个 Python 类：E27653 Fraction\n逐行数代价：插入排序的最好 / 最坏情况\n内置 list / set / deque 的操作代价（实测）");
+
+// S.1 Fraction
+{
+  const s = content("S.1", "补充 · ADT 落成类 · OJ E27653 Fraction 类", "抽象数据类型 = 数据 + 运算；在 Python 里就是一个 class");
+  codeBlock(s, `def gcd(a, b):
+    while b:
+        a, b = b, a % b                 # 辗转相除
+    return a
+
+class Fraction:
+    def __init__(self, num, den):
+        if den == 0:
+            raise ZeroDivisionError("denominator is 0")
+        if den < 0:
+            num, den = -num, -den       # 符号放到分子上
+        g = gcd(abs(num), den)
+        self.num, self.den = num // g, den // g   # 构造时就约成最简
+
+    def __add__(self, other):           # a/b + c/d = (ad + bc) / bd
+        return Fraction(self.num * other.den + other.num * self.den,
+                        self.den * other.den)
+
+    def __eq__(self, other):            # 都是最简形式：逐项比较即可
+        return self.num == other.num and self.den == other.den
+
+    def __str__(self):
+        return f"{self.num}/{self.den}"
+
+a, b, c, d = map(int, input().split())
+print(Fraction(a, b) + Fraction(c, d))  # 1 4 1 2 → 3/4`, 0.5, 1.05, 6.0, 4.05, { fontSize: 7.9, lang: "py", hl: [13, 15, 19] });
+  table(s, [
+    ["ADT 的部分", "在类里"],
+    ["数据（分子、分母）", { t: "self.num / self.den", mono: true }],
+    ["不变量：最简、分母 > 0", { t: "__init__", mono: true }],
+    ["运算：加、判等、显示", { t: "__add__ / __eq__ / __str__", mono: true }],
+  ], 6.7, 1.05, 2.8, [1.25, 1.55], { fontSize: 8.5, rowH: 0.4, tight: true });
+  callout(s, "不变量放在构造里", "每个对象一出生就是最简形式，`__add__` 和 `__eq__` 都不必再约分——这就是 1.1.3 节「概念层只看运算，实现层守住表示」的一个小例子。", 6.7, 2.75, 2.8, 1.6, { fontSize: 9.5, fill: C.mint, tcolor: C.dark });
+  text(s, "Fraction(1, 2) == Fraction(2, 4) → True；Fraction(−1, 6) + Fraction(1, 4) → 1/12", 6.7, 4.45, 2.8, 0.65, { fontSize: 9, color: C.muted, margin: 0 });
+}
+
+// S.2 insertion sort line-by-line cost
+{
+  const s = content("S.2", "补充 · 逐行数代价 · 插入排序", "T(n) = Σ cᵢ × 第 i 行执行次数：同一规模，输入不同，阶也不同");
+  codeBlock(s, `def insertion_sort(arr):                       # 代价  次数
+    for i in range(1, len(arr)):               # c1    n
+        j = i                                  # c2    n − 1
+        while j > 0 and arr[j - 1] > arr[j]:   # c4    Σ tᵢ
+            arr[j - 1], arr[j] = arr[j], arr[j - 1]   # c5    Σ (tᵢ − 1)
+            j -= 1                             # c6    Σ (tᵢ − 1)`, 0.5, 1.05, 9.0, 1.45, { fontSize: 9.5, lang: "py", hl: [4] });
+  text(s, "tᵢ = 第 i 趟 while 条件被测试的次数（i = 1 … n−1）", 0.5, 2.6, 9.0, 0.3, { fontSize: 11, bold: true, color: C.dark, margin: 0 });
+  card(s, 0.5, 3.0, 4.35, 1.15, "EAF4EF");
+  text(s, "最好：已有序，tᵢ = 1", 0.65, 3.05, 4.1, 0.3, { fontSize: 11.5, bold: true, color: C.ok, margin: 0 });
+  text(s, "T(n) = (c1 + c2 + c4)n − (c2 + c4) = **an + b**，线性\n实测 n = 10：Σ tᵢ = 9", 0.65, 3.4, 4.1, 0.7, { fontSize: 10.5, margin: 0, lsm: 1.2 });
+  card(s, 5.15, 3.0, 4.35, 1.15, "FDF0EE");
+  text(s, "最坏：逆序，tᵢ = i + 1", 5.3, 3.05, 4.1, 0.3, { fontSize: 11.5, bold: true, color: C.bad, margin: 0 });
+  text(s, "Σ tᵢ = n(n+1)/2 − 1，T(n) = **an² + bn + c**，二次\n实测 n = 10：Σ tᵢ = 54", 5.3, 3.4, 4.1, 0.7, { fontSize: 10.5, margin: 0, lsm: 1.2 });
+  callout(s, "笔试题：[15, 5, 4, 18, 12, 19, 14, 10, 8, 20] 插入排序三趟之后？", "前 4 个排好、其余不动：**[4, 5, 15, 18, 12, 19, 14, 10, 8, 20]**。常数 cᵢ 一旦被 a、b、c 吸收，就只剩「线性还是二次」——这正是 3.1 节渐进分析要做的简化。", 0.5, 4.3, 9.0, 0.82, { fontSize: 9.5, tsize: 10.5 });
+}
+
+// S.3 python operation costs
+{
+  const s = content("S.3", "补充 · Python 内置结构的代价（实测）", "同样一行代码，换个容器差三四个数量级");
+  table(s, [
+    ["操作", "复杂度", "本机实测（每次）", "原因"],
+    [{ t: "list.append(x) / pop()", mono: true }, { t: "摊还 O(1)", color: C.ok, bold: true }, "≈ 19 ns", "动态数组，满了按比例扩容"],
+    [{ t: "list.insert(0, x) / pop(0)", mono: true }, { t: "O(n)", color: C.bad, bold: true }, "≈ 33 µs（n = 10⁵）", "后面的元素整体挪一格"],
+    [{ t: "x in list", mono: true }, { t: "O(n)", color: C.bad, bold: true }, "≈ 0.49 ms（n = 10⁵）", "顺序检索"],
+    [{ t: "x in set / dict", mono: true }, { t: "平均 O(1)", color: C.ok, bold: true }, "≈ 26 ns", "散列（第 10 章）"],
+    [{ t: "deque.popleft()", mono: true }, { t: "O(1)", color: C.ok, bold: true }, "—", "两端都能 O(1)（第 3 章）"],
+  ], 0.5, 1.05, 9.0, [2.6, 1.3, 2.1, 3.0], { fontSize: 10, rowH: 0.42 });
+  callout(s, "「摊还 O(1)」是什么意思", "单次 append 碰上扩容要搬全部元素，是 O(n)；但扩容按比例放大，搬家间隔越来越长，**n 次 append 总共 O(n)**，平均到每次仍是 O(1)。第 2 章顺序表的翻倍扩容就是这个道理。", 0.5, 3.7, 5.6, 1.4, { fontSize: 10, fill: C.mint, tcolor: C.dark });
+  callout(s, "写 OJ 时的三条", ["判重 / 查找用 `set`、`dict`，别在 list 里 `in`；", "队列用 `deque`，别 `pop(0)`；", "大输入 `sys.stdin.read()` 一次读完。"], 6.3, 3.7, 3.2, 1.4, { fontSize: 9.5, gap: 3 });
 }
 
 // 58. 附录：平台与资源
